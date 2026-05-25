@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5W2H Action Monitor | Gestão Inteligente</title>
+  
+  <!-- CSS Principal -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="logo-icon">5W</div>
+        <div class="app-title">
+          <h1>Monitoramento de Ações</h1>
+          <span>Metodologia 5W2H</span>
+        </div>
+      </div>
+
+      <!-- Navegação SPA -->
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-target="dashboard-view">
+          <i data-lucide="bar-chart-2"></i> Dashboard
+        </button>
+        <button class="tab-btn" data-target="actions-view">
+          <i data-lucide="list-todo"></i> Planos de Ação
+        </button>
+        <button class="tab-btn" data-target="fca-view">
+          <i data-lucide="clipboard-list"></i> Análises FCA
+        </button>
+      </nav>
+
+      <!-- Autenticação Google Drive -->
+      <div class="header-actions">
+        <!-- Alternador de Tema Claro/Escuro -->
+        <button id="btn-theme-toggle" class="btn-icon" title="Alternar Tema Claro/Escuro" style="width: 38px; height: 38px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border-normal); display: flex; align-items: center; justify-content: center; color: var(--text-main);">
+          <i data-lucide="sun" id="theme-icon-sun" style="display: none; width: 18px; height: 18px;"></i>
+          <i data-lucide="moon" id="theme-icon-moon" style="width: 18px; height: 18px;"></i>
+        </button>
+
+        <div class="connection-status">
+          <div id="connection-dot" class="status-dot"></div>
+          <span id="connection-text">Desconectado (Modo Local)</span>
+        </div>
+        <div class="auth-wrapper">
+          <button id="btn-connect" class="btn btn-google">
+            <svg class="google-icon" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Conectar ao Drive
+          </button>
+          <button id="btn-disconnect" class="btn btn-danger" style="display: none;">
+            <i data-lucide="log-out"></i> Desconectar
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN VIEWS -->
+    <main class="app-main">
+      
+      <!-- ==========================================
+           TELA 2: DASHBOARD (HABILITADA POR PADRÃO)
+           ========================================== -->
+      <section id="dashboard-view" class="view-panel active">
+        
+        <!-- Cards de Estatísticas -->
+        <div class="stats-summary">
+          <div class="stat-card total">
+            <span class="stat-label">Total de Ações</span>
+            <span id="stat-total" class="stat-value">0</span>
+            <span class="stat-meta">Registradas</span>
+          </div>
+          <div class="stat-card progress">
+            <span class="stat-label">Em Andamento</span>
+            <span id="stat-progress" class="stat-value">0</span>
+            <span id="stat-progress-pct" class="stat-meta">0% do total</span>
+          </div>
+          <div class="stat-card completed">
+            <span class="stat-label">Concluídas</span>
+            <span id="stat-completed" class="stat-value">0</span>
+            <span id="stat-completed-pct" class="stat-meta">0% do total</span>
+          </div>
+          <div class="stat-card delayed">
+            <span class="stat-label">Atrasadas / Pendentes</span>
+            <span id="stat-delayed" class="stat-value">0</span>
+            <span id="stat-delayed-pct" class="stat-meta">0% do total</span>
+          </div>
+        </div>
+
+        <!-- Área de Gráficos -->
+        <div class="charts-grid">
+          
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title">Status das Ações</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-status"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title">Investimento Total por Setor (Onde)</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-costs"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title">Distribuição de Responsabilidade (Quem)</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-responsible"></canvas>
+            </div>
+          </div>
+          
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title">Volume de Ações por Setor (Onde)</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="chart-sectors"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ==========================================
+           TELA 1: LISTA E MONITORAMENTO DAS AÇÕES 5W2H
+           ========================================== -->
+      <section id="actions-view" class="view-panel">
+        
+        <!-- Barra de Ferramentas / Filtros -->
+        <div class="actions-toolbar">
+          <div class="search-filter-wrapper">
+            <input type="text" id="action-search" class="input-search" placeholder="Buscar por O Que, Quem ou Setor...">
+            
+            <select id="filter-status" class="select-filter">
+              <option value="all">Todos os Status</option>
+              <option value="Não Iniciado">Não Iniciados</option>
+              <option value="Iniciado">Iniciados</option>
+              <option value="Concluído">Concluídos</option>
+              <option value="Atrasado">Atrasados</option>
+              <option value="Cancelado">Cancelados</option>
+              <option value="Parado">Parados</option>
+            </select>
+          </div>
+          
+          <button id="btn-new-action" class="btn btn-primary">
+            <i data-lucide="plus"></i> Nova Ação 5W2H
+          </button>
+        </div>
+
+        <!-- Tabela -->
+        <div class="table-container">
+          <table class="actions-table" id="table-actions">
+            <thead>
+              <tr>
+                <th>O Que (What) / Por Que (Why)</th>
+                <th>Quem (Who) / Onde (Where)</th>
+                <th>Quando (When)</th>
+                <th>Como (How)</th>
+                <th>Custo (How Much)</th>
+                <th>Status</th>
+                <th style="width: 100px;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="actions-list-body">
+              <!-- Renderizado dinamicamente via JS -->
+            </tbody>
+          </table>
+          
+          <div id="actions-empty-state" class="empty-state" style="display: none;">
+            <div class="empty-state-icon"><i data-lucide="folder-open"></i></div>
+            <p>Nenhuma ação cadastrada ou encontrada com os filtros selecionados.</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==========================================
+           TELA 4: GESTÃO DE FCA (FATO, CAUSA, AÇÃO) [NEW]
+           ========================================== -->
+      <section id="fca-view" class="view-panel">
+        
+        <!-- Barra de Ferramentas -->
+        <div class="actions-toolbar">
+          <div class="search-filter-wrapper">
+            <input type="text" id="fca-search" class="input-search" placeholder="Buscar por Fato, Causa ou Ação Proposta...">
+          </div>
+          
+          <button id="btn-new-fca" class="btn btn-primary">
+            <i data-lucide="plus"></i> Nova Análise FCA
+          </button>
+        </div>
+
+        <!-- Tabela de FCAs -->
+        <div class="table-container">
+          <table class="actions-table" id="table-fcas">
+            <thead>
+              <tr>
+                <th style="width: 25%;">Fato (Problema)</th>
+                <th style="width: 25%;">Causa Raiz</th>
+                <th style="width: 25%;">Ação Proposta</th>
+                <th style="width: 15%;">Status / Ação 5W2H</th>
+                <th style="width: 10%;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="fcas-list-body">
+              <!-- Renderizado dinamicamente via JS -->
+            </tbody>
+          </table>
+          
+          <div id="fcas-empty-state" class="empty-state" style="display: none;">
+            <div class="empty-state-icon"><i data-lucide="alert-circle"></i></div>
+            <p>Nenhum FCA cadastrado ou encontrado com o filtro atual.</p>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ==========================================
+       MODAL DE CADASTRO E EDIÇÃO DE AÇÃO
+       ========================================== -->
+  <div id="modal-action" class="modal-overlay">
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        <h2 id="modal-title">Nova Ação 5W2H</h2>
+        <button id="btn-modal-close" class="btn-icon">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="form-action" onsubmit="event.preventDefault();">
+        <input type="hidden" id="action-id-field">
+        <input type="hidden" id="action-fca-id-field">
+        
+        <div class="modal-body">
+          <!-- Alerta de Vínculo FCA -->
+          <div id="fca-link-notice" class="alert-box" style="margin-bottom: 20px; background: rgba(0, 242, 254, 0.08); border-color: rgba(0, 242, 254, 0.2); display: none;">
+            <div class="alert-title" style="color: var(--color-cyan);">
+              <i data-lucide="link"></i> Vinculado à Análise FCA
+            </div>
+            <p style="font-size: 12px; margin-top: 4px;">Esta ação foi gerada a partir de uma análise FCA e ajudará no bloqueio da causa raiz.</p>
+          </div>
+
+          <div class="form-grid">
+            
+            <!-- WHAT -->
+            <div class="form-group form-grid-full">
+              <label for="field-what">O que fazer? (What) <span>*</span></label>
+              <input type="text" id="field-what" class="input-control" placeholder="Ação detalhada a ser realizada" required>
+            </div>
+
+            <!-- WHY -->
+            <div class="form-group form-grid-full">
+              <label for="field-why">Por que fazer? (Why) <span>*</span></label>
+              <textarea id="field-why" class="input-control" placeholder="Justificativa técnica ou motivo comercial" required></textarea>
+            </div>
+
+            <!-- WHO -->
+            <div class="form-group form-grid-full">
+              <label for="field-who">Quem fará? (Who) <span>* (Nomes separados por vírgula para múltiplos responsáveis)</span></label>
+              <input type="text" id="field-who" class="input-control" placeholder="Ex: André, Carlos, Mariana" required>
+            </div>
+
+            <!-- WHERE -->
+            <div class="form-group">
+              <label for="field-where">Onde será feito? (Where) <span>*</span></label>
+              <input type="text" id="field-where" class="input-control" placeholder="Departamento, setor ou local" required>
+            </div>
+
+            <!-- AREA -->
+            <div class="form-group">
+              <label for="field-area">Área da Ação <span>*</span></label>
+              <input type="text" id="field-area" class="input-control" placeholder="Área ou Subsetor organizacional" required>
+            </div>
+
+            <!-- WHEN -->
+            <div class="form-group">
+              <label for="field-when">Quando? (When - Prazo) <span>*</span></label>
+              <input type="date" id="field-when" class="input-control" required>
+            </div>
+
+            <!-- HOW MUCH -->
+            <div class="form-group">
+              <label for="field-how-much">Quanto custa? (How Much) <span>(R$)</span></label>
+              <input type="number" id="field-how-much" class="input-control" min="0" step="0.01" placeholder="Ex: 1500.00 ou 0 para sem custo">
+            </div>
+
+            <!-- HOW -->
+            <div class="form-group form-grid-full">
+              <label for="field-how">Como será feito? (How) <span>*</span></label>
+              <textarea id="field-how" class="input-control" placeholder="Passo a passo resumido, ferramenta ou processo" required></textarea>
+            </div>
+
+            <!-- STATUS -->
+            <div class="form-group form-grid-full">
+              <label for="field-status">Status Atual <span>*</span></label>
+              <select id="field-status" class="input-control" required>
+                <option value="Não Iniciado">Não Iniciado</option>
+                <option value="Iniciado">Iniciado</option>
+                <option value="Concluído">Concluído</option>
+                <option value="Atrasado">Atrasado</option>
+                <option value="Cancelado">Cancelado</option>
+                <option value="Parado">Parado</option>
+              </select>
+            </div>
+
+            <!-- MOTIVO (Dinamico para Cancelado / Parado) -->
+            <div id="status-reason-group" class="form-group form-grid-full" style="display: none;">
+              <label id="status-reason-label" for="field-status-reason">Motivo <span>*</span></label>
+              <textarea id="field-status-reason" class="input-control" placeholder="Descreva o motivo detalhado..."></textarea>
+            </div>
+
+            <!-- EVIDENCE -->
+            <div class="form-group form-grid-full">
+              <label for="field-evidence">Evidência de Conclusão <span>(Link do arquivo ou descrição da entrega)</span></label>
+              <div style="display: flex; gap: 8px; width: 100%;">
+                <input type="text" id="field-evidence" class="input-control" placeholder="Ex: https://drive.google.com/file/... ou 'Aprovado pelo Diretor'" style="flex: 1;">
+                <input type="file" id="evidence-file-picker" style="display: none;">
+                <button type="button" id="btn-upload-evidence" class="btn" style="white-space: nowrap; display: flex; align-items: center; gap: 6px; padding: 0 16px; background: var(--bg-card); border: 1px solid var(--border-normal); color: var(--text-main); font-weight: 600; cursor: pointer; border-radius: var(--radius-sm); transition: var(--transition-fast);">
+                  <i data-lucide="upload-cloud" style="width: 16px; height: 16px;"></i> Enviar p/ Drive
+                </button>
+              </div>
+              <span id="evidence-upload-status" style="font-size: 11px; color: var(--color-cyan); display: none; margin-top: 4px;"></span>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-form-cancel" class="btn">Cancelar</button>
+          <button type="submit" id="btn-form-submit" class="btn btn-primary">Salvar Ação</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- MODAL DE CADASTRO E EDIÇÃO DE FCA -->
+  <div id="modal-fca" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      
+      <div class="modal-header">
+        <h2 id="fca-modal-title">Nova Análise FCA</h2>
+        <button id="btn-fca-modal-close" class="btn-icon">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="form-fca" onsubmit="event.preventDefault();">
+        <input type="hidden" id="fca-id-field">
+        
+        <div class="modal-body">
+          <div class="form-grid">
+            
+            <!-- FATO -->
+            <div class="form-group form-grid-full">
+              <label for="field-fca-fact">Fato / Ocorrência / Problema (O que aconteceu?) <span>*</span></label>
+              <textarea id="field-fca-fact" class="input-control" placeholder="Descreva de forma clara e objetiva o problema ou fato ocorrido" required></textarea>
+            </div>
+
+            <!-- CAUSA -->
+            <div class="form-group form-grid-full">
+              <label for="field-fca-cause">Causa Raiz (Por que aconteceu?) <span>*</span></label>
+              <textarea id="field-fca-cause" class="input-control" placeholder="Analise a causa raiz do problema (ex: técnica dos 5 porquês)" required></textarea>
+            </div>
+
+            <!-- AÇÃO PROPOSTA -->
+            <div class="form-group form-grid-full">
+              <label for="field-fca-action">Ação Proposta (O que faremos para bloquear a causa?) <span>*</span></label>
+              <textarea id="field-fca-action" class="input-control" placeholder="Descreva a ação recomendada para solucionar a causa raiz" required></textarea>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-fca-cancel" class="btn">Cancelar</button>
+          <button type="submit" id="btn-fca-submit" class="btn btn-primary">Salvar Análise FCA</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- MODAL DE CONTINGÊNCIA (BLOQUEIO DE TI / FALHA DE CONEXÃO) -->
+  <div id="modal-contingency" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+      
+      <div class="modal-header" style="background: rgba(255, 23, 68, 0.1); border-bottom-color: rgba(255, 23, 68, 0.2);">
+        <h2 style="color: var(--status-delayed); display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 18px; font-weight: 700;">
+          <i data-lucide="shield-alert"></i> Modo de Contingência Local
+        </h2>
+        <button id="btn-contingency-close" class="btn-icon">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding: 24px; font-size: 14px;">
+        <p style="margin-bottom: 16px; line-height: 1.6;">
+          Detectamos que o acesso ao Google Drive foi bloqueado pelo administrador de TI da sua organização ou houve uma falha de conexão com as APIs do Google.
+        </p>
+        <div style="background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-normal); margin-bottom: 20px; font-size: 13px; color: var(--text-muted); word-break: break-word;">
+          <strong>Detalhes:</strong> <span id="contingency-error-msg">Erro desconhecido</span>
+        </div>
+        <p style="font-weight: 600; margin-bottom: 12px; color: var(--text-main);">Seus dados estão protegidos! O app ativou as seguintes ações:</p>
+        <ul style="margin-left: 20px; font-size: 13px; line-height: 1.6; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; color: var(--text-muted);">
+          <li><strong>Banco de Dados Local:</strong> Suas ações estão salvas com segurança no armazenamento local deste navegador. Você não perderá o seu trabalho.</li>
+          <li><strong>Backup de Segurança:</strong> Você pode exportar ou importar seus dados em JSON a qualquer momento na barra de ferramentas dos Planos de Ação.</li>
+          <li><strong>Alternativa na Nuvem:</strong> Se desejar sincronizar, tente conectar usando uma conta Google pessoal (@gmail.com), que não sofre travas de TI de empresas.</li>
+        </ul>
+      </div>
+
+      <div class="modal-footer" style="padding: 16px 24px;">
+        <button id="btn-contingency-ok" class="btn btn-primary" style="background: var(--status-delayed); border: none; color: white;">Entendido (Operar Localmente)</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- NOTIFICAÇÃO TOAST -->
+  <div id="toast" class="toast">
+    <i id="toast-icon" data-lucide="info"></i>
+    <span id="toast-message" class="toast-message">Mensagem padrão.</span>
+  </div>
+
+  <!-- SCRIPTS EXTERNOS -->
+  <!-- Google Identity Services (GIS) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- SCRIPTS DA APLICAÇÃO -->
+  <script src="google-drive-db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
