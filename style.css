@@ -915,29 +915,36 @@ textarea.input-control {
 
 /* Colaboradores dinâmicos */
 .collaborator-row {
-  display: grid;
-  grid-template-columns: 130px 1.5fr 1fr 1fr 110px 38px;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-normal);
+  margin-bottom: 12px;
+}
+
+.collaborator-row-top {
+  display: grid;
+  grid-template-columns: 130px 1fr 38px;
+  gap: 8px;
   align-items: center;
 }
 
-@media (max-width: 768px) {
-  .collaborator-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.02);
-    padding: 12px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-normal);
-    margin-bottom: 12px;
-    position: relative;
+.collaborator-row-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 480px) {
+  .collaborator-row-top {
+    grid-template-columns: 1fr 38px;
   }
-  
-  .collaborator-row .delete-collab {
-    position: absolute;
-    top: 12px;
-    right: 12px;
+  .collaborator-row-bottom {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Elementos do Impacto no Caixa
   const fieldHasCashImpact = document.getElementById('field-has-cash-impact');
+  const hasCashImpactGroup = document.getElementById('has-cash-impact-group');
   const cashImpactValueGroup = document.getElementById('cash-impact-value-group');
   const fieldCashImpactValue = document.getElementById('field-cash-impact-value');
   
@@ -442,6 +443,15 @@ document.addEventListener('DOMContentLoaded', () => {
       fieldHowMuchGroup.style.display = 'none';
       fieldHowMuch.value = '';
       
+      // Oculta campos de impacto no caixa no formulário
+      hasCashImpactGroup.style.display = 'none';
+      fieldHasCashImpact.removeAttribute('required');
+      fieldHasCashImpact.value = 'Não';
+      
+      cashImpactValueGroup.style.display = 'none';
+      fieldCashImpactValue.removeAttribute('required');
+      fieldCashImpactValue.value = '';
+      
       // Exibe container de Pessoas
       peopleActionContainer.style.display = 'block';
       // Ativa o 'required' em todas as linhas de colaboradores
@@ -454,6 +464,13 @@ document.addEventListener('DOMContentLoaded', () => {
       fieldArea.setAttribute('required', 'required');
       
       fieldHowMuchGroup.style.display = 'block';
+      
+      // Exibe campos de impacto no caixa
+      hasCashImpactGroup.style.display = 'block';
+      fieldHasCashImpact.setAttribute('required', 'required');
+      
+      // Controla a exibição condicional do valor de impacto
+      handleCashImpactChange();
       
       // Oculta container de Pessoas
       peopleActionContainer.style.display = 'none';
@@ -471,18 +488,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const isRequired = fieldProject.value === 'Pessoas' ? 'required' : '';
     
     row.innerHTML = `
-      <select class="input-control collab-action" ${isRequired}>
-        <option value="Contratação">Contratação</option>
-        <option value="Redução">Redução</option>
-        <option value="Migrar PJ">Migrar PJ</option>
-      </select>
-      <input type="text" class="input-control collab-name" placeholder="Nome completo" ${isRequired}>
-      <input type="text" class="input-control collab-role" placeholder="Cargo (Ex: Analista)" ${isRequired}>
-      <input type="text" class="input-control collab-area" placeholder="Área (Ex: Operações)" ${isRequired}>
-      <input type="number" class="input-control collab-cost" placeholder="Custo (R$)" min="0" step="0.01" ${isRequired}>
-      <button type="button" class="btn-icon delete delete-collab" title="Remover Colaborador">
-        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
-      </button>
+      <div class="collaborator-row-top">
+        <select class="input-control collab-action" ${isRequired}>
+          <option value="Contratação">Contratação</option>
+          <option value="Redução">Redução</option>
+          <option value="Migrar PJ">Migrar PJ</option>
+        </select>
+        <input type="text" class="input-control collab-name" placeholder="Nome completo" ${isRequired}>
+        <button type="button" class="btn-icon delete delete-collab" title="Remover Colaborador">
+          <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+      <div class="collaborator-row-bottom">
+        <input type="text" class="input-control collab-role" placeholder="Cargo (Ex: Analista)" ${isRequired}>
+        <input type="text" class="input-control collab-area" placeholder="Área (Ex: Operações)" ${isRequired}>
+        <input type="number" class="input-control collab-cost" placeholder="Custo (R$)" min="0" step="0.01" ${isRequired}>
+      </div>
     `;
     
     if (collabObj) {
