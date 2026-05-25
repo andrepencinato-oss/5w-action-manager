@@ -97,6 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const fcaLinkNotice = document.getElementById('fca-link-notice');
   const fieldArea = document.getElementById('field-area');
   const fieldEvidence = document.getElementById('field-evidence');
+  
+  // Elementos do Impacto no Caixa
+  const fieldHasCashImpact = document.getElementById('field-has-cash-impact');
+  const cashImpactValueGroup = document.getElementById('cash-impact-value-group');
+  const fieldCashImpactValue = document.getElementById('field-cash-impact-value');
 
   // Stats Elements
   const statTotal = document.getElementById('stat-total');
@@ -389,7 +394,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function handleCashImpactChange() {
+    const hasImpact = fieldHasCashImpact.value === 'Sim';
+    if (hasImpact) {
+      cashImpactValueGroup.style.display = 'block';
+      fieldCashImpactValue.setAttribute('required', 'required');
+    } else {
+      cashImpactValueGroup.style.display = 'none';
+      fieldCashImpactValue.removeAttribute('required');
+      fieldCashImpactValue.value = '';
+    }
+  }
+
   fieldStatus.addEventListener('change', handleStatusChange);
+  fieldHasCashImpact.addEventListener('change', handleCashImpactChange);
 
   btnUploadEvidence.addEventListener('click', () => {
     evidenceFilePicker.click();
@@ -442,10 +460,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function downloadExcelTemplate() {
     const actionsHeader = [
-      ["ID", "What (O que)", "Why (Por que)", "Where (Onde)", "Area (Área)", "When (Quando)", "Who (Quem)", "How (Como)", "How Much (Quanto)", "Status", "StatusReason (Motivo)", "Evidence (Evidência)", "FcaId"]
+      ["ID", "What (O que)", "Why (Por que)", "Where (Onde)", "Area (Área)", "When (Quando)", "Who (Quem)", "How (Como)", "How Much (Quanto)", "Status", "StatusReason (Motivo)", "Evidence (Evidência)", "FcaId", "HasCashImpact (Impacto no Caixa?)", "CashImpactValue (Valor do Impacto)"]
     ];
     const actionsSample = [
-      ["1001", "Exemplo de Ação 5W2H", "Exemplo de Justificativa", "Setor de Operações", "Operações", "2026-12-31", "André, Carlos", "Exemplo de Como Fazer", 150.00, "Não Iniciado", "", "", ""]
+      ["1001", "Exemplo de Ação 5W2H", "Exemplo de Justificativa", "Setor de Operações", "Operações", "2026-12-31", "André, Carlos", "Exemplo de Como Fazer", 150.00, "Não Iniciado", "", "", "", "Sim", 5000.00]
     ];
     
     const fcasHeader = [
@@ -497,7 +515,9 @@ document.addEventListener('DOMContentLoaded', () => {
               status: headers.indexOf("status"),
               statusreason: headers.findIndex(h => h.includes("statusreason") || h.includes("motivo")),
               evidence: headers.findIndex(h => h.includes("evidence") || h.includes("evidência")),
-              fcaid: headers.indexOf("fcaid")
+              fcaid: headers.indexOf("fcaid"),
+              hascashimpact: headers.findIndex(h => h.includes("cashimpact") || h.includes("impacto no caixa") || h.includes("impacto")),
+              cashimpactvalue: headers.findIndex(h => h.includes("impactvalue") || h.includes("valor do impacto") || h.includes("valor impacto"))
             };
             
             for (let i = 1; i < rows.length; i++) {
@@ -510,6 +530,9 @@ document.addEventListener('DOMContentLoaded', () => {
               const idVal = colMap.id !== -1 && row[colMap.id] ? String(row[colMap.id]).trim() : String(Date.now() + i);
               const costVal = colMap.howmuch !== -1 ? parseFloat(row[colMap.howmuch]) || 0 : 0;
               const whenVal = colMap.when !== -1 && row[colMap.when] ? String(row[colMap.when]).trim() : new Date().toISOString().slice(0, 10);
+              
+              const hasCashImpactVal = colMap.hascashimpact !== -1 && row[colMap.hascashimpact] ? String(row[colMap.hascashimpact]).trim() : 'Não';
+              const cashImpactVal = colMap.cashimpactvalue !== -1 ? parseFloat(row[colMap.cashimpactvalue]) || 0 : 0;
               
               const actionData = {
                 id: idVal,
@@ -525,6 +548,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusReason: colMap.statusreason !== -1 ? String(row[colMap.statusreason] || '').trim() : '',
                 evidence: colMap.evidence !== -1 ? String(row[colMap.evidence] || '').trim() : '',
                 fcaId: colMap.fcaid !== -1 ? String(row[colMap.fcaid] || '').trim() : '',
+                hasCashImpact: hasCashImpactVal,
+                cashImpactValue: cashImpactVal,
                 createdAt: new Date().toISOString()
               };
               
@@ -682,7 +707,12 @@ document.addEventListener('DOMContentLoaded', () => {
       fieldEvidence.value = actionToEdit.evidence || '';
       actionFcaIdField.value = actionToEdit.fcaId || '';
       
+      // Impacto no Caixa
+      fieldHasCashImpact.value = actionToEdit.hasCashImpact || 'Não';
+      fieldCashImpactValue.value = actionToEdit.cashImpactValue || '';
+      
       handleStatusChange();
+      handleCashImpactChange();
 
       if (actionToEdit.fcaId) {
         fcaLinkNotice.style.display = 'block';
@@ -692,7 +722,13 @@ document.addEventListener('DOMContentLoaded', () => {
       actionIdField.value = '';
       fieldStatus.value = 'Não Iniciado';
       fieldStatusReason.value = '';
+      
+      // Impacto no Caixa
+      fieldHasCashImpact.value = 'Não';
+      fieldCashImpactValue.value = '';
+      
       handleStatusChange();
+      handleCashImpactChange();
       
       // Preenche data padrão com amanhã
       const tomorrow = new Date();
@@ -731,6 +767,8 @@ document.addEventListener('DOMContentLoaded', () => {
       evidence: fieldEvidence.value.trim(),
       fcaId: fcaId,
       statusReason: (fieldStatus.value === 'Cancelado' || fieldStatus.value === 'Parado') ? fieldStatusReason.value.trim() : '',
+      hasCashImpact: fieldHasCashImpact.value,
+      cashImpactValue: fieldHasCashImpact.value === 'Sim' ? (parseFloat(fieldCashImpactValue.value) || 0) : 0,
       createdAt: isEdit ? (actions.find(a => a.id === id)?.createdAt || new Date().toISOString()) : new Date().toISOString()
     };
 
@@ -829,6 +867,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
       
       const formattedCost = act.howMuch.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      let costCellContent = `<span class="cost-tag">${formattedCost}</span>`;
+      if (act.hasCashImpact === 'Sim') {
+        const formattedImpact = (act.cashImpactValue || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        costCellContent += `
+          <div style="font-size: 11px; color: var(--color-cyan); margin-top: 4px; font-weight: 600; display: flex; align-items: center; gap: 4px;" title="Impacto financeiro no caixa">
+            <i data-lucide="trending-down" style="width: 12px; height: 12px;"></i> Caixa: ${formattedImpact}
+          </div>
+        `;
+      }
       const formattedDate = act.when.split('-').reverse().join('/');
       
       let badgeClass = 'badge-pending';
@@ -875,7 +922,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="max-height: 60px; overflow-y: auto; font-size: 13px;">${escapeHtml(act.how)}</div>
         </td>
         <td>
-          <span class="cost-tag">${formattedCost}</span>
+          ${costCellContent}
         </td>
         <td>
           <span class="badge ${badgeClass}">${act.status}</span>

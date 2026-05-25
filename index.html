@@ -316,6 +316,21 @@
               <input type="number" id="field-how-much" class="input-control" min="0" step="0.01" placeholder="Ex: 1500.00 ou 0 para sem custo">
             </div>
 
+            <!-- HAS CASH IMPACT -->
+            <div class="form-group">
+              <label for="field-has-cash-impact">Haverá impacto no caixa? <span>*</span></label>
+              <select id="field-has-cash-impact" class="input-control" required>
+                <option value="Não">Não</option>
+                <option value="Sim">Sim</option>
+              </select>
+            </div>
+
+            <!-- CASH IMPACT VALUE -->
+            <div id="cash-impact-value-group" class="form-group" style="display: none;">
+              <label for="field-cash-impact-value">Valor do Impacto no Caixa <span>* (R$)</span></label>
+              <input type="number" id="field-cash-impact-value" class="input-control" min="0" step="0.01" placeholder="Ex: 5000.00">
+            </div>
+
             <!-- HOW -->
             <div class="form-group form-grid-full">
               <label for="field-how">Como será feito? (How) <span>*</span></label>
