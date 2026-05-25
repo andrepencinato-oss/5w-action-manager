@@ -650,17 +650,12 @@ document.addEventListener('DOMContentLoaded', () => {
   btnModalClose.addEventListener('click', closeModal);
   btnFormCancel.addEventListener('click', closeModal);
   
-  // Fecha ao clicar fora do modal
-  modalAction.addEventListener('click', (e) => {
-    if (e.target === modalAction) closeModal();
-  });
+  // Modais não fecham mais ao clicar fora (evita perda acidental de dados)
 
   // Ouvintes para o modal de contingência
   btnContingencyClose.addEventListener('click', closeContingencyModal);
   btnContingencyOk.addEventListener('click', closeContingencyModal);
-  modalContingency.addEventListener('click', (e) => {
-    if (e.target === modalContingency) closeContingencyModal();
-  });
+  // O modal de contingência não fecha ao clicar fora
 
   function closeContingencyModal() {
     modalContingency.classList.remove('active');
@@ -1281,9 +1276,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnFcaModalClose.addEventListener('click', closeFcaModal);
   btnFcaCancel.addEventListener('click', closeFcaModal);
-  modalFca.addEventListener('click', (e) => {
-    if (e.target === modalFca) closeFcaModal();
-  });
+  // O modal de FCA não fecha mais ao clicar fora
 
   function openFcaModal(fcaToEdit = null) {
     formFca.reset();
