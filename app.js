@@ -65,6 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const evidenceFilePicker = document.getElementById('evidence-file-picker');
   const evidenceUploadStatus = document.getElementById('evidence-upload-status');
 
+  // Elementos do Excel (Import/Download)
+  const btnImportXlsx = document.getElementById('btn-import-xlsx');
+  const btnDownloadTemplate = document.getElementById('btn-download-template');
+  const xlsxFilePicker = document.getElementById('xlsx-file-picker');
+
   // Contingency Modal Elements
   const modalContingency = document.getElementById('modal-contingency');
   const btnContingencyClose = document.getElementById('btn-contingency-close');
@@ -419,6 +424,188 @@ document.addEventListener('DOMContentLoaded', () => {
       evidenceFilePicker.value = '';
     }
   });
+
+  // =========================================================================
+  // LÓGICA DE IMPORTAÇÃO E EXPORTAÇÃO EXCEL
+  // =========================================================================
+  btnDownloadTemplate.addEventListener('click', downloadExcelTemplate);
+  btnImportXlsx.addEventListener('click', () => {
+    xlsxFilePicker.click();
+  });
+
+  xlsxFilePicker.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    importExcelFile(file);
+    xlsxFilePicker.value = ''; // Reseta picker
+  });
+
+  function downloadExcelTemplate() {
+    const actionsHeader = [
+      ["ID", "What (O que)", "Why (Por que)", "Where (Onde)", "Area (Área)", "When (Quando)", "Who (Quem)", "How (Como)", "How Much (Quanto)", "Status", "StatusReason (Motivo)", "Evidence (Evidência)", "FcaId"]
+    ];
+    const actionsSample = [
+      ["1001", "Exemplo de Ação 5W2H", "Exemplo de Justificativa", "Setor de Operações", "Operações", "2026-12-31", "André, Carlos", "Exemplo de Como Fazer", 150.00, "Não Iniciado", "", "", ""]
+    ];
+    
+    const fcasHeader = [
+      ["ID", "Fact (Fato/Problema)", "Cause (Causa Raiz)", "Proposed Action (Ação Proposta)", "ActionId"]
+    ];
+    const fcasSample = [
+      ["FCA1001", "Exemplo de desvio ou problema", "Exemplo de causa analisada", "Exemplo de ação para bloquear causa", "1001"]
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const wsActions = XLSX.utils.aoa_to_sheet(actionsHeader.concat(actionsSample));
+    const wsFCAs = XLSX.utils.aoa_to_sheet(fcasHeader.concat(fcasSample));
+
+    XLSX.utils.book_append_sheet(wb, wsActions, "Planos_5W2H");
+    XLSX.utils.book_append_sheet(wb, wsFCAs, "Analises_FCA");
+
+    XLSX.writeFile(wb, "modelo_importacao_5w2h_fca.xlsx");
+    showToast("Modelo de importação Excel baixado com sucesso!", "success");
+  }
+
+  async function importExcelFile(file) {
+    const reader = new FileReader();
+    
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        let importedActionsCount = 0;
+        let importedFcasCount = 0;
+        
+        // 1. Processar aba Planos_5W2H
+        const sheetActions = workbook.Sheets["Planos_5W2H"];
+        if (sheetActions) {
+          const rows = XLSX.utils.sheet_to_json(sheetActions, { header: 1 });
+          if (rows.length > 1) {
+            const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+            
+            const colMap = {
+              id: headers.indexOf("id"),
+              what: headers.findIndex(h => h.includes("what") || h.includes("o que")),
+              why: headers.findIndex(h => h.includes("why") || h.includes("por que")),
+              where: headers.findIndex(h => h.includes("where") || h.includes("onde")),
+              area: headers.findIndex(h => h.includes("area") || h.includes("área")),
+              when: headers.findIndex(h => h.includes("when") || h.includes("quando")),
+              who: headers.findIndex(h => h.includes("who") || h.includes("quem")),
+              how: headers.findIndex(h => h.includes("how") || h.includes("como")),
+              howmuch: headers.findIndex(h => h.includes("how much") || h.includes("quanto") || h.includes("custo")),
+              status: headers.indexOf("status"),
+              statusreason: headers.findIndex(h => h.includes("statusreason") || h.includes("motivo")),
+              evidence: headers.findIndex(h => h.includes("evidence") || h.includes("evidência")),
+              fcaid: headers.indexOf("fcaid")
+            };
+            
+            for (let i = 1; i < rows.length; i++) {
+              const row = rows[i];
+              if (!row || row.length === 0) continue;
+              
+              const whatVal = colMap.what !== -1 ? String(row[colMap.what] || '').trim() : '';
+              if (!whatVal) continue;
+              
+              const idVal = colMap.id !== -1 && row[colMap.id] ? String(row[colMap.id]).trim() : String(Date.now() + i);
+              const costVal = colMap.howmuch !== -1 ? parseFloat(row[colMap.howmuch]) || 0 : 0;
+              const whenVal = colMap.when !== -1 && row[colMap.when] ? String(row[colMap.when]).trim() : new Date().toISOString().slice(0, 10);
+              
+              const actionData = {
+                id: idVal,
+                what: whatVal,
+                why: colMap.why !== -1 ? String(row[colMap.why] || '').trim() : '',
+                where: colMap.where !== -1 ? String(row[colMap.where] || '').trim() : '',
+                area: colMap.area !== -1 ? String(row[colMap.area] || '').trim() : '',
+                when: whenVal,
+                who: colMap.who !== -1 ? String(row[colMap.who] || '').trim() : '',
+                how: colMap.how !== -1 ? String(row[colMap.how] || '').trim() : '',
+                howMuch: costVal,
+                status: colMap.status !== -1 ? String(row[colMap.status] || 'Não Iniciado').trim() : 'Não Iniciado',
+                statusReason: colMap.statusreason !== -1 ? String(row[colMap.statusreason] || '').trim() : '',
+                evidence: colMap.evidence !== -1 ? String(row[colMap.evidence] || '').trim() : '',
+                fcaId: colMap.fcaid !== -1 ? String(row[colMap.fcaid] || '').trim() : '',
+                createdAt: new Date().toISOString()
+              };
+              
+              const existingIndex = actions.findIndex(a => a.id === idVal);
+              if (existingIndex !== -1) {
+                actionData.createdAt = actions[existingIndex].createdAt || actionData.createdAt;
+                actions[existingIndex] = actionData;
+              } else {
+                actions.unshift(actionData);
+              }
+              importedActionsCount++;
+            }
+          }
+        }
+        
+        // 2. Processar aba Analises_FCA
+        const sheetFCAs = workbook.Sheets["Analises_FCA"];
+        if (sheetFCAs) {
+          const rows = XLSX.utils.sheet_to_json(sheetFCAs, { header: 1 });
+          if (rows.length > 1) {
+            const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+            
+            const colMap = {
+              id: headers.indexOf("id"),
+              fact: headers.findIndex(h => h.includes("fact") || h.includes("fato") || h.includes("problema")),
+              cause: headers.findIndex(h => h.includes("cause") || h.includes("causa")),
+              proposedaction: headers.findIndex(h => h.includes("proposed") || h.includes("ação") || h.includes("proposta")),
+              actionid: headers.indexOf("actionid")
+            };
+            
+            for (let i = 1; i < rows.length; i++) {
+              const row = rows[i];
+              if (!row || row.length === 0) continue;
+              
+              const factVal = colMap.fact !== -1 ? String(row[colMap.fact] || '').trim() : '';
+              const causeVal = colMap.cause !== -1 ? String(row[colMap.cause] || '').trim() : '';
+              if (!factVal && !causeVal) continue;
+              
+              const idVal = colMap.id !== -1 && row[colMap.id] ? String(row[colMap.id]).trim() : String(Date.now() + 1000 + i);
+              
+              const fcaData = {
+                id: idVal,
+                fact: factVal,
+                cause: causeVal,
+                proposedAction: colMap.proposedaction !== -1 ? String(row[colMap.proposedaction] || '').trim() : '',
+                actionId: colMap.actionid !== -1 ? String(row[colMap.actionid] || '').trim() : '',
+                createdAt: new Date().toISOString()
+              };
+              
+              const existingIndex = fcas.findIndex(f => f.id === idVal);
+              if (existingIndex !== -1) {
+                fcaData.createdAt = fcas[existingIndex].createdAt || fcaData.createdAt;
+                fcas[existingIndex] = fcaData;
+              } else {
+                fcas.unshift(fcaData);
+              }
+              importedFcasCount++;
+            }
+          }
+        }
+        
+        saveLocalActions();
+        saveLocalFCAs();
+        renderActionsTable();
+        renderFCAsTable();
+        updateDashboard();
+        
+        if (dbConnected) {
+          await syncWithDrive();
+        }
+        
+        showToast(`Importação Concluída! ${importedActionsCount} ações e ${importedFcasCount} FCAs importados.`, "success");
+        
+      } catch (err) {
+        console.error(err);
+        showToast(`Erro ao importar planilha: ${err.message}`, "error");
+      }
+    };
+    
+    reader.readAsArrayBuffer(file);
+  }
 
   // =========================================================================
   // NAVEGAÇÃO DE ABAS SPA

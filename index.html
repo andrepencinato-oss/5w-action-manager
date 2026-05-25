@@ -160,9 +160,18 @@
             </select>
           </div>
           
-          <button id="btn-new-action" class="btn btn-primary">
-            <i data-lucide="plus"></i> Nova Ação 5W2H
-          </button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <input type="file" id="xlsx-file-picker" accept=".xlsx, .xls" style="display: none;">
+            <button id="btn-import-xlsx" class="btn" title="Importar Planilha Excel" style="background: rgba(0, 230, 118, 0.1); color: var(--status-completed); border-color: rgba(0, 230, 118, 0.3);">
+              <i data-lucide="file-spreadsheet"></i> Importar Excel
+            </button>
+            <button id="btn-download-template" class="btn" title="Baixar Modelo de Importação" style="background: var(--bg-card); color: var(--text-main);">
+              <i data-lucide="download"></i> Baixar Modelo
+            </button>
+            <button id="btn-new-action" class="btn btn-primary">
+              <i data-lucide="plus"></i> Nova Ação 5W2H
+            </button>
+          </div>
         </div>
 
         <!-- Tabela -->
@@ -452,6 +461,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SheetJS (Leitura e Geração de Excel) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- SCRIPTS DA APLICAÇÃO -->
   <script src="google-drive-db.js"></script>
