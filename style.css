@@ -934,9 +934,15 @@ textarea.input-control {
 
 .collaborator-row-bottom {
   display: grid;
-  grid-template-columns: 1fr 1fr 120px;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
   align-items: center;
+}
+
+.collaborator-row .input-control {
+  width: 100%;
+  min-width: 0; /* Impede blowout no grid */
+  padding: 12px 10px; /* Reduz ligeiramente o padding horizontal para evitar vazamentos */
 }
 
 @media (max-width: 480px) {

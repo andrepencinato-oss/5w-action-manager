@@ -12,19 +12,24 @@ A aplicação está localizada no diretório `C:/Users/andre.WIN-UT7BSJO8U2I/.ge
    - Campo **Projeto Vinculado** movido para a primeira posição da grid do modal.
    - Criado o container `#people-action-container` com o botão **"+ Adicionar Colaborador"** e `#collaborators-list` para renderização dinâmica das linhas de movimentação de pessoal.
    - Habilita alternador inteligente de layout: oculta os campos padrão de Área e Custo quando o projeto é "Pessoas" e revela o gerenciador de colaboradores.
+   - Adicionada a identificação `id="has-cash-impact-group"` no container do seletor de impacto no caixa, permitindo manipulá-lo via script.
    - Mantém as atualizações anteriores: status da ação (Não Iniciado, Iniciado, Concluído, Atrasado, Cancelado e Parado), motivo condicional para Cancelado/Parado, e evidências com envio direto ao Drive.
 
 2. **[style.css](file:///C:/Users/andre.WIN-UT7BSJO8U2I/.gemini/antigravity-ide/scratch/5w-action-manager/style.css)**:
-   - Adicionada classe `.collaborator-row` configurada em grid responsiva de 6 colunas (`Tipo Movimentação | Nome | Cargo | Área | Custo | Botão Excluir`).
-   - Implementada media query específica para dispositivos móveis, transformando cada linha de colaborador em um cartão empilhado legível, com botão de remoção flutuante posicionado no canto superior direito.
+   - **Remoção de Barra de Rolagem Lateral**: A classe `.collaborator-row` foi reformulada de um grid horizontal de 6 colunas para um layout de cartão flexível em duas linhas (`.collaborator-row-top` e `.collaborator-row-bottom`). Isso garante que os campos nunca se apertem horizontalmente e caibam perfeitamente na largura do modal, eliminando qualquer barra de rolagem horizontal.
+   - Na versão mobile (abaixo de 480px), o layout se empilha verticalmente de forma limpa.
 
 3. **[google-drive-db.js](file:///C:/Users/andre.WIN-UT7BSJO8U2I/.gemini/antigravity-ide/scratch/5w-action-manager/google-drive-db.js)**:
    - **Expansão para 22 Colunas (A a V):** O banco de dados do Sheets agora lê e grava a coluna `PeopleList` (Lista Colaboradores JSON, índice 21).
    - **Sincronização Automática de Cabeçalhos:** O app atualiza automaticamente a planilha na nuvem escrevendo os cabeçalhos atualizados (`A1:V1`) ao estabelecer conexão.
 
 4. **[app.js](file:///C:/Users/andre.WIN-UT7BSJO8U2I/.gemini/antigravity-ide/scratch/5w-action-manager/app.js)**:
-   - **Mapeador Dinâmico `addCollaboratorRow(collabObj = null)`**: Gera inputs para múltiplos colaboradores na tela. Ao deletar uma linha, ela é removida dinamicamente e os ícones Lucide (lixeira) são recriados.
-   - **Validação de Formulário Inteligente**: Ao selecionar "Pessoas", todas as linhas dinâmicas de colaboradores ganham o atributo `required` automaticamente. Se mudar de projeto, o required é limpo para evitar conflitos de envio.
+   - **Cálculo Automático de Impacto no Caixa**: No projeto de **Pessoas**, o impacto no caixa do plano é sempre calculado de forma automática nos bastidores como a soma de custos dos colaboradores cadastrados (`totalPeopleCost`).
+   - **Simplificação do Formulário (Ocultação de Campos)**: Quando o projeto "Pessoas" está selecionado, as perguntas manuais de impacto no caixa ("Haverá impacto no caixa?" e "Valor do Impacto") são **ocultadas do formulário** para otimizar espaço e evitar confusão, uma vez que são calculadas de forma sistêmica. Para outros projetos, esses campos voltam a ser visíveis e configuráveis manualmente.
+   - **Mapeador Dinâmico em 2 Linhas**: Atualizada a rotina `addCollaboratorRow` para gerar a estrutura de cartão de 2 linhas:
+     - Linha Superior: Tipo de Movimento, Nome do Colaborador, e Botão de Lixeira.
+     - Linha Inferior: Cargo, Área e Custo.
+   - **Controle de Validação**: Ao selecionar "Pessoas", todas as linhas dinâmicas de colaboradores ganham o atributo `required` automaticamente. Se mudar de projeto, o required é limpo para evitar conflitos de envio.
    - **Serialização e Deserialização Robusta**:
      - Os colaboradores são convertidos para JSON e armazenados na coluna `PeopleList`.
      - Para compatibilidade reversa e clareza visual direta no Sheets, os campos legados são preenchidos por fórmulas de agregação: `peopleCost` e `howMuch` acumulam a soma total de custos; `peopleName` junta os nomes separados por vírgula; `peopleRole` junta os cargos; `peopleAction` exibe "Vários" caso as movimentações variem na mesma ação.
@@ -41,28 +46,20 @@ A aplicação está localizada no diretório `C:/Users/andre.WIN-UT7BSJO8U2I/.ge
 Acesse a aplicação rodando localmente no navegador:
 * **[http://localhost:3000](http://localhost:3000)**
 
-### 2. Validar Múltiplos Colaboradores no Modal
-- Abra a aba **Planos de Ação** e clique em **"Nova Ação 5W2H"**.
-- Como o projeto padrão é **Pessoas**, o formulário ocultará os campos padrão de área/custo e exibirá a lista de colaboradores com uma linha em branco padrão.
-- Insira as informações do primeiro colaborador e clique em **"+ Adicionar Colaborador"** para inserir novos.
-- Preencha dados variados (ex: uma "Contratação" de R$ 4.000,00 e uma "Redução" de R$ 2.500,00).
-- Clique no botão de lixeira de uma das linhas e verifique a exclusão correta.
+### 2. Validar o Layout sem Barra de Rolagem Horizontal
+- Abra a aba **Planos de Ação** e clique em **"Nova Ação 5W2H"** ou em **"Editar"** uma existente do projeto Pessoas.
+- Verifique que as linhas de colaboradores aparecem organizadas em blocos elegantes de duas linhas.
+- Altere o tamanho da janela do navegador ou visualize em resoluções diferentes: note que o modal não gera barras de rolagem horizontais (laterais) de forma alguma; a rolagem é exclusivamente vertical (para cima e para baixo), oferecendo excelente leitura dos campos.
 
-### 3. Validar Renderização na Tabela e Salvamento
-- Preencha o restante do formulário e clique em **"Salvar Ação"**.
-- Na tabela de Ações, verifique a coluna de **Custo (How Much)**:
-  - Os custos totais são exibidos como valor principal.
-  - Logo abaixo, cada colaborador é listado em uma linha dedicada, com o ícone correspondente ao movimento selecionado (verde para contratação, vermelho para redução, laranja para migrar PJ).
-- Se estiver com a conta Google conectada, verifique a gravação dos dados no Google Sheets:
-  - A coluna `PeopleList` (Coluna V) conterá a string JSON estruturada.
-  - As colunas de texto mostrarão a concatenação dos dados para leitura visual.
+### 3. Validar Cálculo de Impacto no Caixa Automático
+- Adicione um ou mais colaboradores informando custos (ex: Contratação de André por R$ 5.000,00 e Migração PJ de Ana por R$ 3.500,00).
+- Verifique que os campos de "Haverá impacto no caixa?" e "Valor do impacto" permanecem invisíveis no formulário, não sobrecarregando a tela.
+- Preencha o resto dos campos e salve.
+- Verifique na tabela de ações:
+  - O custo principal exibido será **R$ 8.500,00**.
+  - Abaixo aparecerá o indicador azul de caixa: **"Caixa: R$ 8.500,00"**, comprovando que o impacto no caixa foi setado automaticamente como a soma exata dos colaboradores.
+- No Google Sheets, a coluna `HasCashImpact` (Coluna O) estará salva como `Sim` e a coluna `CashImpactValue` (Coluna P) conterá `8500`.
 
 ### 4. Validar Painel de Dashboard
 - Mude para a aba **Dashboard**.
-- Verifique a linha do projeto **"Pessoas"** na tabela de resumo por projetos:
-  - As colunas "Contratações", "Reduções" e "Migrações PJ" contabilizarão individualmente os registros de colaboradores gerados na ação.
-  - O "Saldo Financeiro Pessoas" exibirá o valor financeiro líquido correto (Contratações + Migrações - Reduções) com as cores de acento do tema.
-
-### 5. Validar Exportação/Importação Excel
-- Clique em **"Baixar Modelo"** e verifique no arquivo Excel gerado a presença da coluna `PeopleList`.
-- Tente importar uma planilha de exemplo e certifique-se de que os múltiplos colaboradores são restaurados perfeitamente.
+- Verifique que o projeto **"Pessoas"** consolida as contagens e que os custos das contratações e reduções batem com as somas das listas de colaboradores de todas as ações.
