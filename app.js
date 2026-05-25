@@ -102,6 +102,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const fieldHasCashImpact = document.getElementById('field-has-cash-impact');
   const cashImpactValueGroup = document.getElementById('cash-impact-value-group');
   const fieldCashImpactValue = document.getElementById('field-cash-impact-value');
+  
+  // Elementos do Projeto e Movimentação de Pessoas
+  const fieldProject = document.getElementById('field-project');
+  const fieldPeopleAction = document.getElementById('field-people-action');
+  const peopleActionGroup = document.getElementById('people-action-group');
+  const fieldPeopleName = document.getElementById('field-people-name');
+  const fieldPeopleCost = document.getElementById('field-people-cost');
+  const projectSummaryBody = document.getElementById('project-summary-body');
 
   // Stats Elements
   const statTotal = document.getElementById('stat-total');
@@ -406,8 +414,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function handlePeopleActionChange() {
+    const hasPeopleAction = fieldPeopleAction.value === 'Contratação' || fieldPeopleAction.value === 'Redução';
+    if (hasPeopleAction) {
+      peopleActionGroup.style.display = 'grid';
+      fieldPeopleName.setAttribute('required', 'required');
+      fieldPeopleCost.setAttribute('required', 'required');
+    } else {
+      peopleActionGroup.style.display = 'none';
+      fieldPeopleName.removeAttribute('required');
+      fieldPeopleCost.removeAttribute('required');
+      fieldPeopleName.value = '';
+      fieldPeopleCost.value = '';
+    }
+  }
+
   fieldStatus.addEventListener('change', handleStatusChange);
   fieldHasCashImpact.addEventListener('change', handleCashImpactChange);
+  fieldPeopleAction.addEventListener('change', handlePeopleActionChange);
 
   btnUploadEvidence.addEventListener('click', () => {
     evidenceFilePicker.click();
@@ -460,10 +484,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function downloadExcelTemplate() {
     const actionsHeader = [
-      ["ID", "What (O que)", "Why (Por que)", "Where (Onde)", "Area (Área)", "When (Quando)", "Who (Quem)", "How (Como)", "How Much (Quanto)", "Status", "StatusReason (Motivo)", "Evidence (Evidência)", "FcaId", "HasCashImpact (Impacto no Caixa?)", "CashImpactValue (Valor do Impacto)"]
+      ["ID", "What (O que)", "Why (Por que)", "Where (Onde)", "Area (Área)", "When (Quando)", "Who (Quem)", "How (Como)", "How Much (Quanto)", "Status", "StatusReason (Motivo)", "Evidence (Evidência)", "FcaId", "HasCashImpact (Impacto no Caixa?)", "CashImpactValue (Valor do Impacto)", "Project (Projeto)", "PeopleAction (Contratação/Redução)", "PeopleName (Nome Colaborador)", "PeopleCost (Custo Movimentação)"]
     ];
     const actionsSample = [
-      ["1001", "Exemplo de Ação 5W2H", "Exemplo de Justificativa", "Setor de Operações", "Operações", "2026-12-31", "André, Carlos", "Exemplo de Como Fazer", 150.00, "Não Iniciado", "", "", "", "Sim", 5000.00]
+      ["1001", "Exemplo de Ação 5W2H", "Exemplo de Justificativa", "Setor de Operações", "Operações", "2026-12-31", "André, Carlos", "Exemplo de Como Fazer", 150.00, "Não Iniciado", "", "", "", "Sim", 5000.00, "Projeto Expansão", "Contratação", "Mariana Santos", 3500.00]
     ];
     
     const fcasHeader = [
@@ -517,7 +541,11 @@ document.addEventListener('DOMContentLoaded', () => {
               evidence: headers.findIndex(h => h.includes("evidence") || h.includes("evidência")),
               fcaid: headers.indexOf("fcaid"),
               hascashimpact: headers.findIndex(h => h.includes("cashimpact") || h.includes("impacto no caixa") || h.includes("impacto")),
-              cashimpactvalue: headers.findIndex(h => h.includes("impactvalue") || h.includes("valor do impacto") || h.includes("valor impacto"))
+              cashimpactvalue: headers.findIndex(h => h.includes("impactvalue") || h.includes("valor do impacto") || h.includes("valor impacto")),
+              project: headers.findIndex(h => h.includes("project") || h.includes("projeto")),
+              peopleaction: headers.findIndex(h => h.includes("peopleaction") || h.includes("contratação") || h.includes("movimentação")),
+              peoplename: headers.findIndex(h => h.includes("peoplename") || h.includes("nome colaborador") || h.includes("nome da pessoa")),
+              peoplecost: headers.findIndex(h => h.includes("peoplecost") || h.includes("custo movimentação") || h.includes("custo da pessoa"))
             };
             
             for (let i = 1; i < rows.length; i++) {
@@ -533,6 +561,10 @@ document.addEventListener('DOMContentLoaded', () => {
               
               const hasCashImpactVal = colMap.hascashimpact !== -1 && row[colMap.hascashimpact] ? String(row[colMap.hascashimpact]).trim() : 'Não';
               const cashImpactVal = colMap.cashimpactvalue !== -1 ? parseFloat(row[colMap.cashimpactvalue]) || 0 : 0;
+              const projectVal = colMap.project !== -1 && row[colMap.project] ? String(row[colMap.project]).trim() : '';
+              const peopleActionVal = colMap.peopleaction !== -1 && row[colMap.peopleaction] ? String(row[colMap.peopleaction]).trim() : 'Não';
+              const peopleNameVal = colMap.peoplename !== -1 && row[colMap.peoplename] ? String(row[colMap.peoplename]).trim() : '';
+              const peopleCostVal = colMap.peoplecost !== -1 ? parseFloat(row[colMap.peoplecost]) || 0 : 0;
               
               const actionData = {
                 id: idVal,
@@ -550,6 +582,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 fcaId: colMap.fcaid !== -1 ? String(row[colMap.fcaid] || '').trim() : '',
                 hasCashImpact: hasCashImpactVal,
                 cashImpactValue: cashImpactVal,
+                project: projectVal,
+                peopleAction: peopleActionVal,
+                peopleName: peopleNameVal,
+                peopleCost: peopleCostVal,
                 createdAt: new Date().toISOString()
               };
               
@@ -711,8 +747,15 @@ document.addEventListener('DOMContentLoaded', () => {
       fieldHasCashImpact.value = actionToEdit.hasCashImpact || 'Não';
       fieldCashImpactValue.value = actionToEdit.cashImpactValue || '';
       
+      // Projeto e Movimentação de Pessoas
+      fieldProject.value = actionToEdit.project || '';
+      fieldPeopleAction.value = actionToEdit.peopleAction || 'Não';
+      fieldPeopleName.value = actionToEdit.peopleName || '';
+      fieldPeopleCost.value = actionToEdit.peopleCost || '';
+      
       handleStatusChange();
       handleCashImpactChange();
+      handlePeopleActionChange();
 
       if (actionToEdit.fcaId) {
         fcaLinkNotice.style.display = 'block';
@@ -727,8 +770,15 @@ document.addEventListener('DOMContentLoaded', () => {
       fieldHasCashImpact.value = 'Não';
       fieldCashImpactValue.value = '';
       
+      // Projeto e Movimentação de Pessoas
+      fieldProject.value = '';
+      fieldPeopleAction.value = 'Não';
+      fieldPeopleName.value = '';
+      fieldPeopleCost.value = '';
+      
       handleStatusChange();
       handleCashImpactChange();
+      handlePeopleActionChange();
       
       // Preenche data padrão com amanhã
       const tomorrow = new Date();
@@ -769,6 +819,10 @@ document.addEventListener('DOMContentLoaded', () => {
       statusReason: (fieldStatus.value === 'Cancelado' || fieldStatus.value === 'Parado') ? fieldStatusReason.value.trim() : '',
       hasCashImpact: fieldHasCashImpact.value,
       cashImpactValue: fieldHasCashImpact.value === 'Sim' ? (parseFloat(fieldCashImpactValue.value) || 0) : 0,
+      project: fieldProject.value.trim(),
+      peopleAction: fieldPeopleAction.value,
+      peopleName: (fieldPeopleAction.value === 'Contratação' || fieldPeopleAction.value === 'Redução') ? fieldPeopleName.value.trim() : '',
+      peopleCost: (fieldPeopleAction.value === 'Contratação' || fieldPeopleAction.value === 'Redução') ? (parseFloat(fieldPeopleCost.value) || 0) : 0,
       createdAt: isEdit ? (actions.find(a => a.id === id)?.createdAt || new Date().toISOString()) : new Date().toISOString()
     };
 
@@ -876,6 +930,16 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
       }
+      if (act.peopleAction === 'Contratação' || act.peopleAction === 'Redução') {
+        const formattedPeopleCost = (act.peopleCost || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const iconName = act.peopleAction === 'Contratação' ? 'user-plus' : 'user-minus';
+        const colorStyle = act.peopleAction === 'Contratação' ? 'var(--status-completed)' : 'var(--status-delayed)';
+        costCellContent += `
+          <div style="font-size: 11px; color: ${colorStyle}; margin-top: 4px; font-weight: 600; display: flex; align-items: center; gap: 4px;" title="${act.peopleAction} de Colaborador">
+            <i data-lucide="${iconName}" style="width: 12px; height: 12px;"></i> ${act.peopleAction}: ${escapeHtml(act.peopleName)} (${formattedPeopleCost})
+          </div>
+        `;
+      }
       const formattedDate = act.when.split('-').reverse().join('/');
       
       let badgeClass = 'badge-pending';
@@ -907,6 +971,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>
           <span class="action-title">${escapeHtml(act.what)}</span>
           <span class="action-detail"><strong>Por quê:</strong> ${escapeHtml(act.why)}</span>
+          ${act.project ? `<span class="action-detail" style="color: var(--color-cyan); font-weight:600;"><i data-lucide="folder" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Projeto: ${escapeHtml(act.project)}</span>` : ''}
           ${act.fcaId ? `<span class="action-detail" style="color: var(--color-cyan); font-weight:500;"><i data-lucide="link" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Vinculado ao FCA #${act.fcaId.slice(-4)}</span>` : ''}
         </td>
         <td>
@@ -973,6 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCostsChart();
     renderResponsibleChart();
     renderSectorsChart();
+    renderProjectSummaryTable();
   }
 
   // Gráfico 1: Status das Ações (Doughnut)
@@ -1179,6 +1245,78 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       }
+    });
+  }
+
+  function renderProjectSummaryTable() {
+    projectSummaryBody.innerHTML = '';
+    
+    // Agrupa dados por projeto
+    const projectGroups = {};
+    
+    actions.forEach(act => {
+      const projName = act.project ? act.project.trim() : 'Sem Projeto';
+      if (!projectGroups[projName]) {
+        projectGroups[projName] = {
+          name: projName,
+          actionsCount: 0,
+          totalCost: 0,
+          totalCashImpact: 0,
+          hiringsCount: 0,
+          hiringsCost: 0,
+          reductionsCount: 0,
+          reductionsCost: 0
+        };
+      }
+      
+      const group = projectGroups[projName];
+      group.actionsCount++;
+      group.totalCost += act.howMuch || 0;
+      if (act.hasCashImpact === 'Sim') {
+        group.totalCashImpact += act.cashImpactValue || 0;
+      }
+      
+      if (act.peopleAction === 'Contratação') {
+        group.hiringsCount++;
+        group.hiringsCost += act.peopleCost || 0;
+      } else if (act.peopleAction === 'Redução') {
+        group.reductionsCount++;
+        group.reductionsCost += act.peopleCost || 0;
+      }
+    });
+    
+    const projectsArray = Object.values(projectGroups);
+    
+    if (projectsArray.length === 0) {
+      projectSummaryBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum projeto cadastrado.</td></tr>`;
+      return;
+    }
+    
+    // Ordena por nome do projeto
+    projectsArray.sort((a, b) => a.name.localeCompare(b.name));
+    
+    projectsArray.forEach(proj => {
+      const netPeopleCost = proj.hiringsCost - proj.reductionsCost;
+      const formattedNet = netPeopleCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const netColor = netPeopleCost >= 0 ? 'var(--status-completed)' : 'var(--status-delayed)';
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight: 600; color: var(--text-main);">${escapeHtml(proj.name)}</td>
+        <td><span class="badge badge-progress" style="background: rgba(0, 198, 255, 0.1); color: var(--color-cyan); border: 1px solid rgba(0, 198, 255, 0.2);">${proj.actionsCount}</span></td>
+        <td style="font-weight: 500;">${(proj.totalCost).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+        <td style="font-weight: 500; color: var(--color-cyan);">${(proj.totalCashImpact).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+        <td>
+          <span style="color: var(--status-completed); font-weight: 600;">${proj.hiringsCount}</span> 
+          <span style="font-size:11px; color: var(--text-muted);">(${(proj.hiringsCost).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })})</span>
+        </td>
+        <td>
+          <span style="color: var(--status-delayed); font-weight: 600;">${proj.reductionsCount}</span> 
+          <span style="font-size:11px; color: var(--text-muted);">(${(proj.reductionsCost).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })})</span>
+        </td>
+        <td style="font-weight: 700; color: ${netColor};">${formattedNet}</td>
+      `;
+      projectSummaryBody.appendChild(tr);
     });
   }
 

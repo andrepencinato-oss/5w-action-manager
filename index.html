@@ -135,6 +135,30 @@
             </div>
           </div>
 
+          <div class="chart-card" style="grid-column: span 2; min-height: auto;">
+            <div class="chart-card-header">
+              <span class="chart-card-title">Resumo por Projeto</span>
+            </div>
+            <div class="table-container" style="margin-top: 12px; max-height: 250px; overflow-y: auto; border: none; box-shadow: none; background: transparent;">
+              <table class="actions-table" style="font-size: 13px;">
+                <thead>
+                  <tr style="background: rgba(0,0,0,0.1);">
+                    <th>Nome do Projeto</th>
+                    <th>Ações</th>
+                    <th>Custo Total</th>
+                    <th>Impacto no Caixa</th>
+                    <th>Contratações (Custo)</th>
+                    <th>Reduções (Custo)</th>
+                    <th>Saldo Financeiro Pessoas</th>
+                  </tr>
+                </thead>
+                <tbody id="project-summary-body">
+                  <!-- Inserido dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
 
       </section>
@@ -329,6 +353,34 @@
             <div id="cash-impact-value-group" class="form-group" style="display: none;">
               <label for="field-cash-impact-value">Valor do Impacto no Caixa <span>* (R$)</span></label>
               <input type="number" id="field-cash-impact-value" class="input-control" min="0" step="0.01" placeholder="Ex: 5000.00">
+            </div>
+
+            <!-- PROJETO -->
+            <div class="form-group">
+              <label for="field-project">Projeto Vinculado <span>(Opcional)</span></label>
+              <input type="text" id="field-project" class="input-control" placeholder="Ex: Expansão 2026, Redução Custo">
+            </div>
+
+            <!-- HAS PEOPLE ACTION -->
+            <div class="form-group">
+              <label for="field-people-action">Movimentação de Pessoas? <span>*</span></label>
+              <select id="field-people-action" class="input-control" required>
+                <option value="Não">Não se aplica</option>
+                <option value="Contratação">Contratação</option>
+                <option value="Redução">Redução</option>
+              </select>
+            </div>
+
+            <!-- PEOPLE ACTION GROUP -->
+            <div id="people-action-group" class="form-grid-full form-grid" style="display: none; padding: 0;">
+              <div class="form-group">
+                <label for="field-people-name">Nome do Colaborador <span>*</span></label>
+                <input type="text" id="field-people-name" class="input-control" placeholder="Nome do colaborador">
+              </div>
+              <div class="form-group">
+                <label for="field-people-cost">Custo da Movimentação <span>* (R$)</span></label>
+                <input type="number" id="field-people-cost" class="input-control" min="0" step="0.01" placeholder="Ex: 3500.00">
+              </div>
             </div>
 
             <!-- HOW -->
