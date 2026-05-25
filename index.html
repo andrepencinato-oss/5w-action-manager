@@ -372,38 +372,19 @@
               <input type="number" id="field-cash-impact-value" class="input-control" min="0" step="0.01" placeholder="Ex: 5000.00">
             </div>
 
-
-
             <!-- CONTAINER DE MOVIMENTAÇÃO DE PESSOAS (EXCLUSIVO PROJETO PESSOAS) -->
-            <div id="people-action-container" class="form-grid-full form-grid" style="display: none; padding: 0; gap: 20px;">
-              
-              <div class="form-group form-grid-full">
-                <label for="field-people-action">Movimentação de Pessoas? <span>*</span></label>
-                <select id="field-people-action" class="input-control">
-                  <option value="Contratação">Contratação</option>
-                  <option value="Redução">Redução</option>
-                  <option value="Migrar PJ">Migrar PJ</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="field-people-name">Nome do Colaborador <span>*</span></label>
-                <input type="text" id="field-people-name" class="input-control" placeholder="Nome completo">
-              </div>
-              <div class="form-group">
-                <label for="field-people-role">Cargo <span>*</span></label>
-                <input type="text" id="field-people-role" class="input-control" placeholder="Ex: Analista Financeiro">
-              </div>
-              <div class="form-group">
-                <label for="field-people-area">Área do Colaborador <span>*</span></label>
-                <input type="text" id="field-people-area" class="input-control" placeholder="Ex: Operações">
-              </div>
-              <div class="form-group">
-                <label for="field-people-cost">Custo da Movimentação <span>* (R$)</span></label>
-                <input type="number" id="field-people-cost" class="input-control" min="0" step="0.01" placeholder="Ex: 3500.00">
-              </div>
-
-            </div>
+            <div id="people-action-container" class="form-grid-full" style="display: none; padding: 0;">
+               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-normal); padding-bottom: 8px;">
+                 <label style="font-weight: 600; font-size: 14px; color: var(--text-main);">Colaboradores Movimentados <span>*</span></label>
+                 <button type="button" id="btn-add-collaborator" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; height: auto;">
+                   <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Adicionar Colaborador
+                 </button>
+               </div>
+               
+               <div id="collaborators-list" style="margin-bottom: 16px;">
+                 <!-- Linhas de colaboradores inseridas dinamicamente via JS -->
+               </div>
+             </div>
 
             <!-- HOW -->
             <div class="form-group form-grid-full">

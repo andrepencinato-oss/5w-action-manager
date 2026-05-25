@@ -110,11 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const fieldAreaGroup = document.getElementById('field-area-group');
   const fieldHowMuchGroup = document.getElementById('field-how-much-group');
   const peopleActionContainer = document.getElementById('people-action-container');
-  const fieldPeopleAction = document.getElementById('field-people-action');
-  const fieldPeopleName = document.getElementById('field-people-name');
-  const fieldPeopleRole = document.getElementById('field-people-role');
-  const fieldPeopleArea = document.getElementById('field-people-area');
-  const fieldPeopleCost = document.getElementById('field-people-cost');
+  const btnAddCollaborator = document.getElementById('btn-add-collaborator');
+  const collaboratorsList = document.getElementById('collaborators-list');
   const projectSummaryBody = document.getElementById('project-summary-body');
 
   // Stats Elements
@@ -446,12 +443,11 @@ document.addEventListener('DOMContentLoaded', () => {
       fieldHowMuch.value = '';
       
       // Exibe container de Pessoas
-      peopleActionContainer.style.display = 'grid';
-      fieldPeopleAction.setAttribute('required', 'required');
-      fieldPeopleName.setAttribute('required', 'required');
-      fieldPeopleRole.setAttribute('required', 'required');
-      fieldPeopleArea.setAttribute('required', 'required');
-      fieldPeopleCost.setAttribute('required', 'required');
+      peopleActionContainer.style.display = 'block';
+      // Ativa o 'required' em todas as linhas de colaboradores
+      collaboratorsList.querySelectorAll('input, select').forEach(el => {
+        el.setAttribute('required', 'required');
+      });
     } else {
       // Exibe Area e Custo naturais
       fieldAreaGroup.style.display = 'block';
@@ -461,22 +457,54 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Oculta container de Pessoas
       peopleActionContainer.style.display = 'none';
-      fieldPeopleAction.removeAttribute('required');
-      fieldPeopleName.removeAttribute('required');
-      fieldPeopleRole.removeAttribute('required');
-      fieldPeopleArea.removeAttribute('required');
-      fieldPeopleCost.removeAttribute('required');
-      
-      fieldPeopleName.value = '';
-      fieldPeopleRole.value = '';
-      fieldPeopleArea.value = '';
-      fieldPeopleCost.value = '';
+      // Desativa o 'required' em todas as linhas de colaboradores
+      collaboratorsList.querySelectorAll('input, select').forEach(el => {
+        el.removeAttribute('required');
+      });
     }
+  }
+
+  function addCollaboratorRow(collabObj = null) {
+    const row = document.createElement('div');
+    row.className = 'collaborator-row';
+    
+    const isRequired = fieldProject.value === 'Pessoas' ? 'required' : '';
+    
+    row.innerHTML = `
+      <select class="input-control collab-action" ${isRequired}>
+        <option value="Contratação">Contratação</option>
+        <option value="Redução">Redução</option>
+        <option value="Migrar PJ">Migrar PJ</option>
+      </select>
+      <input type="text" class="input-control collab-name" placeholder="Nome completo" ${isRequired}>
+      <input type="text" class="input-control collab-role" placeholder="Cargo (Ex: Analista)" ${isRequired}>
+      <input type="text" class="input-control collab-area" placeholder="Área (Ex: Operações)" ${isRequired}>
+      <input type="number" class="input-control collab-cost" placeholder="Custo (R$)" min="0" step="0.01" ${isRequired}>
+      <button type="button" class="btn-icon delete delete-collab" title="Remover Colaborador">
+        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+      </button>
+    `;
+    
+    if (collabObj) {
+      row.querySelector('.collab-action').value = collabObj.action || 'Contratação';
+      row.querySelector('.collab-name').value = collabObj.name || '';
+      row.querySelector('.collab-role').value = collabObj.role || '';
+      row.querySelector('.collab-area').value = collabObj.area || '';
+      row.querySelector('.collab-cost').value = collabObj.cost !== undefined ? collabObj.cost : '';
+    }
+    
+    row.querySelector('.delete-collab').addEventListener('click', () => {
+      row.remove();
+    });
+    
+    collaboratorsList.appendChild(row);
+    lucide.createIcons();
   }
 
   fieldStatus.addEventListener('change', handleStatusChange);
   fieldHasCashImpact.addEventListener('change', handleCashImpactChange);
   fieldProject.addEventListener('change', handleProjectChange);
+  btnAddCollaborator.addEventListener('click', () => addCollaboratorRow());
 
   btnUploadEvidence.addEventListener('click', () => {
     evidenceFilePicker.click();
@@ -529,10 +557,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function downloadExcelTemplate() {
     const actionsHeader = [
-      ["ID", "What (O que)", "Why (Por que)", "Where (Onde)", "Area (Área)", "When (Quando)", "Who (Quem)", "How (Como)", "How Much (Quanto)", "Status", "StatusReason (Motivo)", "Evidence (Evidência)", "FcaId", "HasCashImpact (Impacto no Caixa?)", "CashImpactValue (Valor do Impacto)", "Project (Projeto)", "PeopleAction (Contratação/Redução/Migrar PJ)", "PeopleName (Nome Colaborador)", "PeopleCost (Custo Movimentação)", "PeopleRole (Cargo)"]
+      ["ID", "What (O que)", "Why (Por que)", "Where (Onde)", "Area (Área)", "When (Quando)", "Who (Quem)", "How (Como)", "How Much (Quanto)", "Status", "StatusReason (Motivo)", "Evidence (Evidência)", "FcaId", "HasCashImpact (Impacto no Caixa?)", "CashImpactValue (Valor do Impacto)", "Project (Projeto)", "PeopleAction (Contratação/Redução/Migrar PJ)", "PeopleName (Nome Colaborador)", "PeopleCost (Custo Movimentação)", "PeopleRole (Cargo)", "PeopleList (Lista Colaboradores JSON)"]
     ];
     const actionsSample = [
-      ["1001", "Exemplo de Ação 5W2H", "Exemplo de Justificativa", "Setor de Operações", "Operações", "2026-12-31", "André, Carlos", "Exemplo de Como Fazer", 150.00, "Não Iniciado", "", "", "", "Sim", 5000.00, "Pessoas", "Contratação", "Mariana Santos", 3500.00, "Analista Financeiro"]
+      ["1001", "Exemplo de Ação 5W2H", "Exemplo de Justificativa", "Setor de Operações", "Operações", "2026-12-31", "André, Carlos", "Exemplo de Como Fazer", 3500.00, "Não Iniciado", "", "", "", "Sim", 5000.00, "Pessoas", "Contratação", "Mariana Santos", 3500.00, "Analista Financeiro", '[{"action":"Contratação","name":"Mariana Santos","role":"Analista Financeiro","area":"Operações","cost":3500}]']
     ];
     
     const fcasHeader = [
@@ -591,7 +619,8 @@ document.addEventListener('DOMContentLoaded', () => {
               peopleaction: headers.findIndex(h => h.includes("peopleaction") || h.includes("contratação") || h.includes("movimentação")),
               peoplename: headers.findIndex(h => h.includes("peoplename") || h.includes("nome colaborador") || h.includes("nome da pessoa")),
               peoplecost: headers.findIndex(h => h.includes("peoplecost") || h.includes("custo movimentação") || h.includes("custo da pessoa")),
-              peoplerole: headers.findIndex(h => h.includes("peoplerole") || h.includes("cargo"))
+              peoplerole: headers.findIndex(h => h.includes("peoplerole") || h.includes("cargo")),
+              peoplelist: headers.findIndex(h => h.includes("peoplelist") || h.includes("lista colaboradores") || h.includes("lista de colaboradores"))
             };
             
             for (let i = 1; i < rows.length; i++) {
@@ -612,6 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const peopleNameVal = colMap.peoplename !== -1 && row[colMap.peoplename] ? String(row[colMap.peoplename]).trim() : '';
               const peopleCostVal = colMap.peoplecost !== -1 ? parseFloat(row[colMap.peoplecost]) || 0 : 0;
               const peopleRoleVal = colMap.peoplerole !== -1 && row[colMap.peoplerole] ? String(row[colMap.peoplerole]).trim() : '';
+              const peopleListVal = colMap.peoplelist !== -1 && row[colMap.peoplelist] ? String(row[colMap.peoplelist]).trim() : '';
               
               const actionData = {
                 id: idVal,
@@ -634,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 peopleName: peopleNameVal,
                 peopleCost: peopleCostVal,
                 peopleRole: peopleRoleVal,
+                peopleList: peopleListVal,
                 createdAt: new Date().toISOString()
               };
               
@@ -775,6 +806,9 @@ document.addEventListener('DOMContentLoaded', () => {
     fcaLinkNotice.style.display = 'none';
     actionFcaIdField.value = '';
     
+    // Limpa a lista de colaboradores
+    collaboratorsList.innerHTML = '';
+    
     if (actionToEdit) {
       modalTitle.innerText = "Editar Ação 5W2H";
       actionIdField.value = actionToEdit.id;
@@ -807,11 +841,34 @@ document.addEventListener('DOMContentLoaded', () => {
         fieldProjectCustom.value = actionToEdit.project;
       }
       
-      fieldPeopleAction.value = actionToEdit.peopleAction || 'Contratação';
-      fieldPeopleName.value = actionToEdit.peopleName || '';
-      fieldPeopleRole.value = actionToEdit.peopleRole || '';
-      fieldPeopleArea.value = actionToEdit.area || ''; // usa a própria área do card
-      fieldPeopleCost.value = actionToEdit.peopleCost || '';
+      // Carrega os colaboradores do peopleList ou fallback
+      let collabList = [];
+      if (actionToEdit.peopleList) {
+        try {
+          collabList = JSON.parse(actionToEdit.peopleList);
+        } catch (e) {
+          console.error("Erro parsing peopleList in openModal:", e);
+        }
+      }
+      
+      if (!Array.isArray(collabList) || collabList.length === 0) {
+        // Fallback para campos legados se existirem
+        if (actionToEdit.peopleName || actionToEdit.peopleCost || (actionToEdit.peopleAction && actionToEdit.peopleAction !== 'Não')) {
+          collabList = [{
+            action: actionToEdit.peopleAction || 'Contratação',
+            name: actionToEdit.peopleName || '',
+            role: actionToEdit.peopleRole || '',
+            area: actionToEdit.area || '',
+            cost: actionToEdit.peopleCost || 0
+          }];
+        }
+      }
+      
+      if (collabList.length > 0) {
+        collabList.forEach(c => addCollaboratorRow(c));
+      } else {
+        addCollaboratorRow();
+      }
       
       handleStatusChange();
       handleCashImpactChange();
@@ -833,11 +890,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Projeto e Movimentação de Pessoas - Padroniza para "Pessoas" por padrão
       fieldProject.value = 'Pessoas';
       fieldProjectCustom.value = '';
-      fieldPeopleAction.value = 'Contratação';
-      fieldPeopleName.value = '';
-      fieldPeopleRole.value = '';
-      fieldPeopleArea.value = '';
-      fieldPeopleCost.value = '';
+      
+      // Nova ação começa com uma linha de colaborador em branco
+      addCollaboratorRow();
       
       handleStatusChange();
       handleCashImpactChange();
@@ -877,16 +932,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isPessoasProj = finalProject === 'Pessoas';
 
+    // Coleta as informações de colaboradores
+    const collabRows = collaboratorsList.querySelectorAll('.collaborator-row');
+    const collaborators = [];
+    let totalPeopleCost = 0;
+    let names = [];
+    let roles = [];
+    let areas = [];
+    let actionsTypes = new Set();
+    
+    collabRows.forEach(row => {
+      const action = row.querySelector('.collab-action').value;
+      const name = row.querySelector('.collab-name').value.trim();
+      const role = row.querySelector('.collab-role').value.trim();
+      const area = row.querySelector('.collab-area').value.trim();
+      const cost = parseFloat(row.querySelector('.collab-cost').value) || 0;
+      
+      collaborators.push({ action, name, role, area, cost });
+      totalPeopleCost += cost;
+      if (name) names.push(name);
+      if (role) roles.push(role);
+      if (area) areas.push(area);
+      actionsTypes.add(action);
+    });
+
+    if (isPessoasProj && collaborators.length === 0) {
+      showToast("Por favor, adicione pelo menos um colaborador para o projeto Pessoas.", "error");
+      return;
+    }
+
+    let finalPeopleAction = 'Não';
+    if (isPessoasProj && collaborators.length > 0) {
+      if (actionsTypes.size === 1) {
+        finalPeopleAction = Array.from(actionsTypes)[0];
+      } else {
+        finalPeopleAction = 'Vários';
+      }
+    }
+
     const actionData = {
       id: isEdit ? id : String(Date.now()),
       what: fieldWhat.value.trim(),
       why: fieldWhy.value.trim(),
       who: fieldWho.value.trim(),
       where: fieldWhere.value.trim(),
-      area: isPessoasProj ? fieldPeopleArea.value.trim() : fieldArea.value.trim(),
+      area: isPessoasProj ? [...new Set(areas)].join(', ') : fieldArea.value.trim(),
       when: fieldWhen.value,
       how: fieldHow.value.trim(),
-      howMuch: isPessoasProj ? (parseFloat(fieldPeopleCost.value) || 0) : (parseFloat(fieldHowMuch.value) || 0),
+      howMuch: isPessoasProj ? totalPeopleCost : (parseFloat(fieldHowMuch.value) || 0),
       status: fieldStatus.value,
       evidence: fieldEvidence.value.trim(),
       fcaId: fcaId,
@@ -894,10 +987,11 @@ document.addEventListener('DOMContentLoaded', () => {
       hasCashImpact: fieldHasCashImpact.value,
       cashImpactValue: fieldHasCashImpact.value === 'Sim' ? (parseFloat(fieldCashImpactValue.value) || 0) : 0,
       project: finalProject,
-      peopleAction: isPessoasProj ? fieldPeopleAction.value : 'Não',
-      peopleName: isPessoasProj ? fieldPeopleName.value.trim() : '',
-      peopleRole: isPessoasProj ? fieldPeopleRole.value.trim() : '',
-      peopleCost: isPessoasProj ? (parseFloat(fieldPeopleCost.value) || 0) : 0,
+      peopleAction: finalPeopleAction,
+      peopleName: isPessoasProj ? names.join(', ') : '',
+      peopleRole: isPessoasProj ? roles.join(', ') : '',
+      peopleCost: isPessoasProj ? totalPeopleCost : 0,
+      peopleList: isPessoasProj ? JSON.stringify(collaborators) : '',
       createdAt: isEdit ? (actions.find(a => a.id === id)?.createdAt || new Date().toISOString()) : new Date().toISOString()
     };
 
@@ -1005,33 +1099,63 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
       }
-      if (act.peopleAction === 'Contratação' || act.peopleAction === 'Redução' || act.peopleAction === 'Migrar PJ') {
-        const formattedPeopleCost = (act.peopleCost || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        let iconName = 'users';
-        let colorStyle = 'var(--color-cyan)';
-        if (act.peopleAction === 'Contratação') {
-          iconName = 'user-plus';
-          colorStyle = 'var(--status-completed)';
-        } else if (act.peopleAction === 'Redução') {
-          iconName = 'user-minus';
-          colorStyle = 'var(--status-delayed)';
-        } else if (act.peopleAction === 'Migrar PJ') {
-          iconName = 'user-check';
-          colorStyle = '#ff9800'; // Orange
+      
+      let collabs = [];
+      if (act.peopleList) {
+        try {
+          collabs = JSON.parse(act.peopleList);
+        } catch (e) {
+          console.error("Erro parsing peopleList in renderActionsTable:", e);
         }
-        
-        let roleHtml = act.peopleRole ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 1px;">Cargo: ${escapeHtml(act.peopleRole)}</div>` : '';
-        
-        costCellContent += `
-          <div style="font-size: 11px; color: ${colorStyle}; margin-top: 6px; font-weight: 600; display: flex; flex-direction: column; gap: 2px;" title="${act.peopleAction} de Colaborador">
-            <span style="display: flex; align-items: center; gap: 4px;">
-              <i data-lucide="${iconName}" style="width: 12px; height: 12px;"></i> ${act.peopleAction}: ${escapeHtml(act.peopleName)}
-            </span>
-            ${roleHtml}
-            <span style="font-size:10px; color: var(--text-muted); font-weight:500;">Custo: ${formattedPeopleCost}</span>
-          </div>
-        `;
       }
+      
+      if (!Array.isArray(collabs) || collabs.length === 0) {
+        if (act.peopleAction && act.peopleAction !== 'Não') {
+          collabs = [{
+            action: act.peopleAction,
+            name: act.peopleName,
+            role: act.peopleRole,
+            area: act.area,
+            cost: act.peopleCost
+          }];
+        }
+      }
+      
+      if (collabs && collabs.length > 0) {
+        costCellContent += `<div style="margin-top: 8px; border-top: 1px solid var(--border-normal); padding-top: 6px; display: flex; flex-direction: column; gap: 6px;">`;
+        collabs.forEach(c => {
+          const formattedPeopleCost = (c.cost || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+          let iconName = 'users';
+          let colorStyle = 'var(--color-cyan)';
+          if (c.action === 'Contratação') {
+            iconName = 'user-plus';
+            colorStyle = 'var(--status-completed)';
+          } else if (c.action === 'Redução') {
+            iconName = 'user-minus';
+            colorStyle = 'var(--status-delayed)';
+          } else if (c.action === 'Migrar PJ') {
+            iconName = 'user-check';
+            colorStyle = '#ff9800';
+          }
+          
+          costCellContent += `
+            <div style="font-size: 11px; line-height: 1.2; display: flex; flex-direction: column; gap: 1px;">
+              <span style="color: ${colorStyle}; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                <i data-lucide="${iconName}" style="width: 12px; height: 12px; flex-shrink: 0;"></i>
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px;" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+              </span>
+              <span style="font-size: 10px; color: var(--text-muted); padding-left: 16px;">
+                ${escapeHtml(c.role)} (${escapeHtml(c.action)})
+              </span>
+              <span style="font-size: 10px; color: var(--text-muted); font-weight: 500; padding-left: 16px;">
+                Custo: ${formattedPeopleCost}
+              </span>
+            </div>
+          `;
+        });
+        costCellContent += `</div>`;
+      }
+      
       const formattedDate = act.when.split('-').reverse().join('/');
       
       let badgeClass = 'badge-pending';
@@ -1370,16 +1494,36 @@ document.addEventListener('DOMContentLoaded', () => {
         group.totalCashImpact += act.cashImpactValue || 0;
       }
       
-      if (act.peopleAction === 'Contratação') {
-        group.hiringsCount++;
-        group.hiringsCost += act.peopleCost || 0;
-      } else if (act.peopleAction === 'Redução') {
-        group.reductionsCount++;
-        group.reductionsCost += act.peopleCost || 0;
-      } else if (act.peopleAction === 'Migrar PJ') {
-        group.migrationsCount++;
-        group.migrationsCost += act.peopleCost || 0;
+      let collabs = [];
+      if (act.peopleList) {
+        try {
+          collabs = JSON.parse(act.peopleList);
+        } catch (e) {
+          console.error("Erro parsing peopleList in renderProjectSummaryTable:", e);
+        }
       }
+      
+      if (!Array.isArray(collabs) || collabs.length === 0) {
+        if (act.peopleAction && act.peopleAction !== 'Não') {
+          collabs = [{
+            action: act.peopleAction,
+            cost: act.peopleCost || 0
+          }];
+        }
+      }
+      
+      collabs.forEach(c => {
+        if (c.action === 'Contratação') {
+          group.hiringsCount++;
+          group.hiringsCost += c.cost || 0;
+        } else if (c.action === 'Redução') {
+          group.reductionsCount++;
+          group.reductionsCost += c.cost || 0;
+        } else if (c.action === 'Migrar PJ') {
+          group.migrationsCount++;
+          group.migrationsCost += c.cost || 0;
+        }
+      });
     });
     
     const projectsArray = Object.values(projectGroups);
