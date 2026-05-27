@@ -207,6 +207,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Inicializa o Tema Claro/Escuro
     initTheme();
 
+    // Limpa dados de mock antigos do localStorage para iniciar limpo
+    const rawActions = localStorage.getItem('5w2h_actions');
+    if (rawActions && (rawActions.includes('act-1') || rawActions.includes('act-2') || rawActions.includes('act-3'))) {
+      localStorage.removeItem('5w2h_actions');
+    }
+    const rawHeadcount = localStorage.getItem('5w2h_headcount');
+    if (rawHeadcount && (rawHeadcount.includes('hc-1') || rawHeadcount.includes('hc-2') || rawHeadcount.includes('hc-3'))) {
+      localStorage.removeItem('5w2h_headcount');
+    }
+
     // 2. Carrega dados do localStorage
     loadLocalActions();
     loadLocalFCAs();
@@ -269,91 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // GERENCIAMENTO DE DADOS (LOCAL E REMOTO)
   // =========================================================================
-  const MOCK_ACTIONS = [
-    {
-      id: "act-1",
-      what: "Desligamento do colaborador ALINE DE FATIMA BASSO VALENCIO (ANALISTA DE TRANSPORTES JUNIOR - Logística).",
-      why: "Readequação de quadro de funcionários para otimização de custos e eficiência operacional do setor.",
-      where: "Logística",
-      area: "Logística",
-      when: "2026-05-28",
-      who: "RH, Diretor da Área",
-      how: "Realizar reunião de feedback demissional, processar trâmites legais da rescisão CLT, efetuar pagamento das verbas rescisórias e exame médico.",
-      howMuch: 8327.38,
-      status: "Não Iniciado",
-      statusReason: "",
-      evidence: "",
-      fcaId: "",
-      hasCashImpact: "Não",
-      cashImpactValue: 0,
-      project: "Pessoas",
-      peopleAction: "Redução",
-      peopleName: "ALINE DE FATIMA BASSO VALENCIO",
-      peopleCost: 8327.38,
-      peopleRole: "ANALISTA DE TRANSPORTES JUNIOR",
-      peopleList: JSON.stringify([{
-        action: "Redução",
-        name: "ALINE DE FATIMA BASSO VALENCIO",
-        role: "ANALISTA DE TRANSPORTES JUNIOR",
-        area: "Logística",
-        cost: 8327.38,
-        cadastro: "180"
-      }])
-    },
-    {
-      id: "act-2",
-      what: "Contratação de colaborador para reposição / expansão da posição de ASSISTENTE DE SUCESSO CLIENTE na área de Sucesso Cliente.",
-      why: "Atendimento à demanda de trabalho no setor e suporte ao crescimento das metas operacionais da área.",
-      where: "Sucesso Cliente",
-      area: "Sucesso Cliente",
-      when: "2026-05-29",
-      who: "RH, Líder da Área",
-      how: "Divulgação da vaga, triagem de currículos, entrevistas com candidatos, proposta formal de contratação e onboarding do novo funcionário.",
-      howMuch: 5642.22,
-      status: "Concluído",
-      statusReason: "",
-      evidence: "Contrato assinado - pasta de RH",
-      fcaId: "",
-      hasCashImpact: "Não",
-      cashImpactValue: 0,
-      project: "Pessoas",
-      peopleAction: "Contratação",
-      peopleName: "ANA CAROLINA ANDREO SPINOLA",
-      peopleCost: 5642.22,
-      peopleRole: "ASSISTENTE DE SUCESSO CLIENTE",
-      peopleList: JSON.stringify([{
-        action: "Contratação",
-        name: "ANA CAROLINA ANDREO SPINOLA",
-        role: "ASSISTENTE DE SUCESSO CLIENTE",
-        area: "Sucesso Cliente",
-        cost: 5642.22,
-        cadastro: "177"
-      }])
-    },
-    {
-      id: "act-3",
-      what: "Campanha de Tráfego Pago - Google Ads e Meta Ads",
-      why: "Aumentar a geração de leads qualificados para a equipe comercial em 25%.",
-      where: "Comercial",
-      area: "Comercial",
-      when: "2026-06-15",
-      who: "Agência de Marketing, Analista de Marketing",
-      how: "Configurar campanhas com foco em conversão de landing page, testar criativos novos semanalmente e realizar otimização diária de lances.",
-      howMuch: 15000,
-      status: "Iniciado",
-      statusReason: "",
-      evidence: "",
-      fcaId: "",
-      hasCashImpact: "Sim",
-      cashImpactValue: -15000,
-      project: "Marketing",
-      peopleAction: "Não",
-      peopleName: "",
-      peopleCost: 0,
-      peopleRole: "",
-      peopleList: "[]"
-    }
-  ];
+  const MOCK_ACTIONS = [];
 
   function loadLocalActions() {
     const raw = localStorage.getItem('5w2h_actions');
@@ -2111,30 +2037,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
 
   // Dados Mockados dos 22 Colaboradores do print
-  const MOCK_HEADCOUNT = [
-    { id: "hc-1", cadastro: "180", name: "ALINE DE FATIMA BASSO VALENCIO", admission: "2025-11-13", role: "ANALISTA DE TRANSPORTES JUNIOR", area: "Logística", salary: 3785.25, cost: 8327.38, status: "Ativo", conhecimentos: "Logística, Rotas, Legislação", habilidades: "Roteirização, Negociação", atitudes: "Organização, Foco em Resultados", updatedAt: new Date().toISOString() },
-    { id: "hc-2", cadastro: "177", name: "ANA CAROLINA ANDREO SPINOLA", admission: "2025-10-16", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "Atendimento, CRM", habilidades: "Escuta Ativa, Resolução de Problemas", atitudes: "Empatia, Paciência", updatedAt: new Date().toISOString() },
-    { id: "hc-3", cadastro: "187", name: "ANA JULIA MATTURE FERREIRA ALVES", admission: "2026-04-02", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "CRM, Comunicação", habilidades: "Comunicação Escrita, Suporte", atitudes: "Proatividade, Simpatia", updatedAt: new Date().toISOString() },
-    { id: "hc-4", cadastro: "161", name: "ANGELO GUILHERME DOS SANTOS COM", admission: "2024-11-26", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "CRM, Zendesk", habilidades: "Suporte Técnico, SLA", atitudes: "Resiliência, Trabalho em Equipe", updatedAt: new Date().toISOString() },
-    { id: "hc-5", cadastro: "147", name: "CARLOS AUGUSTO BORGES LENCO", admission: "2024-06-04", role: "ANALISTA COMERCIAL JUNIOR", area: "Comercial", salary: 3332.64, cost: 7331.66, status: "Ativo", conhecimentos: "Vendas, CRM, Funil", habilidades: "Prospecção, Pitch de Vendas", atitudes: "Persistência, Iniciativa", updatedAt: new Date().toISOString() },
-    { id: "hc-6", cadastro: "186", name: "EMMANUELLE CRISTINA DE SOUZA", admission: "2026-04-02", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "CRM, Relatórios", habilidades: "Comunicação Verbal, Registro", atitudes: "Cordialidade, Disciplina", updatedAt: new Date().toISOString() },
-    { id: "hc-7", cadastro: "141", name: "FLAVIA SOARES CHAGAS", admission: "2024-05-02", role: "ANALISTA DE PRODUTOS PLENO", area: "Produto", salary: 5007.88, cost: 11017.11, status: "Ativo", conhecimentos: "Metodologia Ágil, Product Management", habilidades: "User Stories, Análise de Dados", atitudes: "Visão Sistêmica, Criatividade", updatedAt: new Date().toISOString() },
-    { id: "hc-8", cadastro: "139", name: "GABRIELLE MARTINS", admission: "2024-04-01", role: "AUXILIAR DE FINANCEIRO", area: "Financeiro", salary: 2415.51, cost: 5314.01, status: "Ativo", conhecimentos: "Contas a Pagar, Faturamento", habilidades: "Conciliação, Excel", atitudes: "Organização, Foco em Detalhes", updatedAt: new Date().toISOString() },
-    { id: "hc-9", cadastro: "132", name: "GISELE PEREIRA DOS SANTOS", admission: "2024-03-12", role: "ANALISTA DE SUCESSO DO CLIENTE", area: "Sucesso Cliente", salary: 3332.64, cost: 7331.66, status: "Ativo", conhecimentos: "NPS, CSAT, Retenção", habilidades: "Gestão de Contas, Métricas", atitudes: "Orientação para o Cliente, Proatividade", updatedAt: new Date().toISOString() },
-    { id: "hc-10", cadastro: "69", name: "JOAO VITOR FERREIRA TONELLO", admission: "2022-02-22", role: "DESIGNER 3D PL", area: "Marca e conteúdo", salary: 8266.98, cost: 18186.98, status: "Ativo", conhecimentos: "Blender, Maya, Modelagem", habilidades: "Modelagem 3D, Texturização", atitudes: "Foco Estético, Inovação", updatedAt: new Date().toISOString() },
-    { id: "hc-11", cadastro: "183", name: "JOSE CARLOS DE OLIVEIRA BRAGA", admission: "2026-02-03", role: "AUXILIAR DE EXPEDIÇÃO", area: "Logistica", salary: 2296.98, cost: 5053.25, status: "Ativo", conhecimentos: "Expedição, WMS", habilidades: "Embalagem, Separação", atitudes: "Agilidade, Responsabilidade", updatedAt: new Date().toISOString() },
-    { id: "hc-12", cadastro: "137", name: "JOYCE DE FATIMA PEREIRA DOS SANTO", admission: "2024-04-01", role: "ANALISTA DE LOGISTICA JR", area: "Logistica", salary: 3500.00, cost: 7699.84, status: "Ativo", conhecimentos: "Distribuição, Transportes", habilidades: "Roteirização, Controle de Custos", atitudes: "Foco em Soluções, Determinação", updatedAt: new Date().toISOString() },
-    { id: "hc-13", cadastro: "50", name: "LETICIA COLLA DE MELO", admission: "2021-07-01", role: "SOCIAL MÍDIA JR", area: "Marca e conteúdo", salary: 3785.25, cost: 8327.38, status: "Ativo", conhecimentos: "Redes Sociais, Copywriting, Marketing", habilidades: "Criação de Conteúdo, Gestão de Comunidades", atitudes: "Criatividade, Dinamismo", updatedAt: new Date().toISOString() },
-    { id: "hc-14", cadastro: "142", name: "LUCAS FERREIRA PONCE", admission: "2024-05-09", role: "ANALISTA FINANCEIRO JUNIOR", area: "Financeiro", salary: 3500.00, cost: 7699.84, status: "Ativo", conhecimentos: "Planejamento Financeiro, DRE", habilidades: "Fórmulas Excel, Modelagem Financeira", atitudes: "Raciocínio Lógico, Atenção", updatedAt: new Date().toISOString() },
-    { id: "hc-15", cadastro: "135", name: "MARIANA DA SILVEIRA ORASMO TAVARE", admission: "2024-03-12", role: "CONFERENTE", area: "Logistica", salary: 3500.00, cost: 7699.84, status: "Ativo", conhecimentos: "Conferência, Inventário", habilidades: "Conferência de Cargas, Paletização", atitudes: "Atenção a Detalhes, Dinamismo", updatedAt: new Date().toISOString() },
-    { id: "hc-16", cadastro: "181", name: "MARIANA PAULA DA SILVA", admission: "2025-12-02", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "CRM, Zendesk", habilidades: "Suporte, Chat", atitudes: "Cordialidade, Espírito de Equipe", updatedAt: new Date().toISOString() },
-    { id: "hc-17", cadastro: "176", name: "NAYLA MIREIA SANTOS DA CONCEICAO", admission: "2023-09-27", role: "CONSULTOR DE VENDAS ONLINE", area: "Comercial", salary: 2106.00, cost: 4633.10, status: "Ativo", conhecimentos: "Técnicas de Vendas, Funil", habilidades: "Negociação Online, Fechamento", atitudes: "Foco em Resultados, Persuasão", updatedAt: new Date().toISOString() },
-    { id: "hc-18", cadastro: "173", name: "PEDRO JOSE LESSI DOS SANTOS", admission: "2025-07-24", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "Atendimento, CRM", habilidades: "Digitação Rápida, Suporte", atitudes: "Paciência, Calma", updatedAt: new Date().toISOString() },
-    { id: "hc-19", cadastro: "172", name: "STEFANY AGATA FERREIRA RIBEIRO", admission: "2025-07-16", role: "AUXILIAR DE MARKETING", area: "Marca e conteúdo", salary: 2415.51, cost: 5314.01, status: "Ativo", conhecimentos: "Redes Sociais, Inbound Marketing", habilidades: "Edição Básica, Disparo de Campanhas", atitudes: "Curiosidade, Vontade de Aprender", updatedAt: new Date().toISOString() },
-    { id: "hc-20", cadastro: "7", name: "VINICIUS TONOLLI MORTATI", admission: "2015-11-16", role: "ANALISTA COMERCIAL SENIOR", area: "Comercial", salary: 5723.29, cost: 12590.98, status: "Ativo", conhecimentos: "Key Accounts, Gestão de Leads", habilidades: "Negociação Complexa, Vendas Consultivas", atitudes: "Liderança, Visão Estratégica", updatedAt: new Date().toISOString() },
-    { id: "hc-21", cadastro: "60", name: "WENDEL MATEUS AMANCIO", admission: "2021-10-07", role: "ANALISTA DE CURADORIA JR", area: "Produto", salary: 3785.25, cost: 8327.38, status: "Ativo", conhecimentos: "Curadoria de Produtos, Pesquisa", habilidades: "Organização de Catálogo, Benchmark", atitudes: "Senso Estético, Concentração", updatedAt: new Date().toISOString() },
-    { id: "hc-22", cadastro: "185", name: "WERLLY GOMES FREIRE", admission: "2026-02-12", role: "AUXILIAR DE EXPEDIÇÃO", area: "Logistica", salary: 2296.98, cost: 5053.25, status: "Ativo", conhecimentos: "Expedição, Estoque", habilidades: "Carga e Descarga, Paletização", atitudes: "Pontualidade, Colaboração", updatedAt: new Date().toISOString() }
-  ];
+  const MOCK_HEADCOUNT = [];
 
   // Carrega do localStorage
   function loadLocalHeadcount() {
