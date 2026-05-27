@@ -207,6 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Inicializa o Tema Claro/Escuro
     initTheme();
 
+    // Inicializa arrays como vazios por padrão
+    actions = [];
+    fcas = [];
+    headcount = [];
+
     // Limpa dados de mock antigos do localStorage para iniciar limpo
     const rawActions = localStorage.getItem('5w2h_actions');
     if (rawActions && (rawActions.includes('act-1') || rawActions.includes('act-2') || rawActions.includes('act-3'))) {
@@ -216,18 +221,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rawHeadcount && (rawHeadcount.includes('hc-1') || rawHeadcount.includes('hc-2') || rawHeadcount.includes('hc-3'))) {
       localStorage.removeItem('5w2h_headcount');
     }
-
-    // 2. Carrega dados do localStorage
-    loadLocalActions();
-    loadLocalFCAs();
-    loadLocalHeadcount();
     
     // 3. Registra os ícones do Lucide
     lucide.createIcons();
     initTagEditorListeners();
     initTransitionListeners();
 
-    // 4. Desenha UI Inicial
+    // 4. Desenha UI Inicial (Vazia por padrão)
     renderActionsTable();
     renderFCAsTable();
     renderHeadcountTable();
@@ -374,11 +374,18 @@ document.addEventListener('DOMContentLoaded', () => {
   btnDisconnect.addEventListener('click', () => {
     GoogleDriveDB.logout();
     updateConnectionStatus(false, 'local');
-    loadLocalActions(); // Retorna aos dados locais
-    loadLocalFCAs();
+    
+    // Zera os dados na tela ao desconectar, para que venha vazio
+    actions = [];
+    fcas = [];
+    headcount = [];
+    
     renderActionsTable();
     renderFCAsTable();
+    renderHeadcountTable();
     updateDashboard();
+    updateHeadcountStats();
+    
     showToast("Desconectado da conta Google. Modo offline ativo.", "info");
   });
 
