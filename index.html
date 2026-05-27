@@ -6,7 +6,7 @@
   <title>5W2H Action Monitor | Gestão Inteligente</title>
   
   <!-- CSS Principal -->
-  <link rel="stylesheet" href="style.css?v=2.5">
+  <link rel="stylesheet" href="style.css?v=3.1">
 </head>
 <body>
 
@@ -590,21 +590,14 @@
 
             <!-- HOW -->
             <div class="form-group form-grid-full">
-              <label for="field-how">Como será feito? (How) <span>*</span></label>
-              <textarea id="field-how" class="input-control" placeholder="Passo a passo resumido, ferramenta ou processo" required></textarea>
-            </div>
-
-            <!-- SUB-ACTIONS (DESDOBRAMENTOS) -->
-            <div class="form-group form-grid-full" style="border-top: 1px solid var(--border-normal); padding-top: 16px; margin-top: 8px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <label style="font-weight: 600; font-size: 13px; color: var(--text-main); display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                  <i data-lucide="git-branch" style="width: 16px; height: 16px; color: var(--color-cyan);"></i> Sub-Ações / Desdobramentos
-                </label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label for="field-how" style="margin-bottom: 0;">Como será feito? (How) <span>*</span></label>
                 <button type="button" id="btn-add-sub-action" class="btn" style="padding: 4px 10px; font-size: 11px; height: 26px; min-height: 26px; background: rgba(0, 242, 254, 0.1); color: var(--color-cyan); border: 1px solid rgba(0, 242, 254, 0.3); font-weight: 600; border-radius: var(--radius-sm); display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                  + Adicionar Sub-Ação
+                  <i data-lucide="git-branch" style="width: 12px; height: 12px;"></i> Desdobrar em Sub-Ações
                 </button>
               </div>
-              <div id="sub-actions-modal-list" style="max-height: 280px; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column;">
+              <textarea id="field-how" class="input-control" placeholder="Passo a passo resumido, ferramenta ou processo" required></textarea>
+              <div id="sub-actions-modal-list" style="max-height: 280px; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; margin-top: 10px;">
                 <!-- Os cartões de sub-ações serão gerados dinamicamente via JS -->
               </div>
             </div>
@@ -870,7 +863,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- SCRIPTS DA APLICAÇÃO -->
-  <script src="google-drive-db.js?v=3.0"></script>
-  <script src="app.js?v=3.0"></script>
+  <script src="google-drive-db.js?v=3.1"></script>
+  <script src="app.js?v=3.1"></script>
 </body>
 </html>
