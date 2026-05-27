@@ -49,6 +49,11 @@ while ($listener.IsListening) {
             elseif ($filePath.EndsWith(".jpg") -or $filePath.EndsWith(".jpeg")) { $res.ContentType = "image/jpeg" }
             elseif ($filePath.EndsWith(".svg")) { $res.ContentType = "image/svg+xml" }
             
+            # Desativa cache no navegador durante o desenvolvimento
+            $res.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate")
+            $res.Headers.Add("Pragma", "no-cache")
+            $res.Headers.Add("Expires", "0")
+            
             # Escreve a resposta
             $res.ContentLength64 = $content.Length
             $res.OutputStream.Write($content, 0, $content.Length)

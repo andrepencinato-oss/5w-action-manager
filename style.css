@@ -996,3 +996,202 @@ textarea.input-control {
   }
 }
 
+/* =========================================================================
+   TELA DE PESSOAS & TEAM BUILDER [NEW]
+   ========================================================================= */
+.people-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .people-layout-grid {
+    grid-template-columns: 1.8fr 1.2fr;
+  }
+}
+
+.cha-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  margin: 1px 2px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .cha-pill {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.cha-pill.c {
+  color: var(--color-cyan);
+  border-left: 2px solid var(--color-cyan);
+  padding-left: 5px;
+}
+
+.cha-pill.h {
+  color: #d161ff;
+  border-left: 2px solid #d161ff;
+  padding-left: 5px;
+}
+
+.cha-pill.a {
+  color: #ff3399;
+  border-left: 2px solid #ff3399;
+  padding-left: 5px;
+}
+
+/* Hover style for discrete table links */
+.actions-table td a {
+  transition: opacity var(--transition-fast) ease;
+}
+.actions-table td a:hover {
+  opacity: 0.85;
+  text-decoration: underline !important;
+}
+
+.team-member-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-normal);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-main);
+  transition: var(--transition-fast);
+}
+
+.team-member-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.team-member-pill .remove-member {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: var(--transition-fast);
+}
+
+.team-member-pill .remove-member:hover {
+  color: var(--status-delayed);
+  transform: scale(1.1);
+}
+
+.collab-read-only-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-normal);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  transition: var(--transition-fast);
+}
+
+.collab-read-only-item:hover {
+  background: rgba(255, 255, 255, 0.01);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Visual Tag Editor in Modals */
+.tags-visual-editor-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 42px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-normal);
+  border-radius: var(--radius-sm);
+  align-content: flex-start;
+  margin-top: 4px;
+}
+.tag-editor-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 2px solid var(--text-muted);
+}
+[data-theme="light"] .tag-editor-pill {
+  background: rgba(0, 0, 0, 0.04);
+}
+.tag-editor-pill.c {
+  color: var(--color-cyan);
+  border-left: 2px solid var(--color-cyan);
+}
+.tag-editor-pill.h {
+  color: #d161ff;
+  border-left: 2px solid #d161ff;
+}
+.tag-editor-pill.a {
+  color: #ff3399;
+  border-left: 2px solid #ff3399;
+}
+.tag-editor-pill .remove-tag-btn {
+  cursor: pointer;
+  opacity: 0.6;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  transition: opacity var(--transition-fast) ease;
+}
+.tag-editor-pill .remove-tag-btn:hover {
+  opacity: 1;
+  color: var(--status-delayed);
+}
+
+/* Tag Suggestions Row */
+.tag-suggestions-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 90px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.tag-suggestion-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  border: 1px dashed var(--border-normal);
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+}
+[data-theme="light"] .tag-suggestion-pill {
+  background: rgba(0, 0, 0, 0.02);
+}
+.tag-suggestion-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  border-style: solid;
+}
+[data-theme="light"] .tag-suggestion-pill:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+
+

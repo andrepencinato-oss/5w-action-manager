@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   let actions = [];
   let fcas = [];
+  let headcount = [];
+  let selectedEmployeeIds = [];
+  let currentEmployeeCTags = [];
+  let currentEmployeeHTags = [];
+  let currentEmployeeATags = [];
   let dbConnected = false;
   let isSaving = false;
 
@@ -31,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const actionsListBody = document.getElementById('actions-list-body');
   const actionsEmptyState = document.getElementById('actions-empty-state');
   const actionSearch = document.getElementById('action-search');
+  const btnClearActionSearch = document.getElementById('btn-clear-action-search');
   const filterStatus = document.getElementById('filter-status');
   const btnNewAction = document.getElementById('btn-new-action');
   
@@ -111,9 +117,68 @@ document.addEventListener('DOMContentLoaded', () => {
   const fieldAreaGroup = document.getElementById('field-area-group');
   const fieldHowMuchGroup = document.getElementById('field-how-much-group');
   const peopleActionContainer = document.getElementById('people-action-container');
-  const btnAddCollaborator = document.getElementById('btn-add-collaborator');
-  const collaboratorsList = document.getElementById('collaborators-list');
+  const collaboratorsListReadOnly = document.getElementById('collaborators-list-read-only');
+  const actionPeopleListField = document.getElementById('action-people-list-field');
   const projectSummaryBody = document.getElementById('project-summary-body');
+
+  // Elementos do Quadro de Pessoas e Team Builder [NEW]
+  const peopleListBody = document.getElementById('people-list-body');
+  const peopleEmptyState = document.getElementById('people-empty-state');
+  const peopleSearch = document.getElementById('people-search');
+  const btnClearPeopleSearch = document.getElementById('btn-clear-people-search');
+  const filterPeopleStatus = document.getElementById('filter-people-status');
+  const btnImportPeopleXlsx = document.getElementById('btn-import-people-xlsx');
+  const peopleXlsxFilePicker = document.getElementById('people-xlsx-file-picker');
+  const btnNewEmployee = document.getElementById('btn-new-employee');
+  
+  const modalEmployee = document.getElementById('modal-employee');
+  const formEmployee = document.getElementById('form-employee');
+  const employeeModalTitle = document.getElementById('employee-modal-title');
+  const btnEmployeeModalClose = document.getElementById('btn-employee-modal-close');
+  const btnEmployeeCancel = document.getElementById('btn-employee-cancel');
+  
+  const employeeIdField = document.getElementById('employee-id-field');
+  const fieldEmployeeCadastro = document.getElementById('field-employee-cadastro');
+  const fieldEmployeeName = document.getElementById('field-employee-name');
+  const fieldEmployeeAdmission = document.getElementById('field-employee-admission');
+  const fieldEmployeeStatus = document.getElementById('field-employee-status');
+  const fieldEmployeeRole = document.getElementById('field-employee-role');
+  const fieldEmployeeArea = document.getElementById('field-employee-area');
+  const fieldEmployeeSalary = document.getElementById('field-employee-salary');
+  const fieldEmployeeCost = document.getElementById('field-employee-cost');
+  const fieldEmployeeC = document.getElementById('field-employee-c');
+  const fieldEmployeeH = document.getElementById('field-employee-h');
+  const fieldEmployeeA = document.getElementById('field-employee-a');
+  
+  // Seletores do editor de tags do colaborador
+  const cTagsVisualContainer = document.getElementById('c-tags-visual-container');
+  const hTagsVisualContainer = document.getElementById('h-tags-visual-container');
+  const aTagsVisualContainer = document.getElementById('a-tags-visual-container');
+  const cTagNewInput = document.getElementById('c-tag-new-input');
+  const hTagNewInput = document.getElementById('h-tag-new-input');
+  const aTagNewInput = document.getElementById('a-tag-new-input');
+  const btnAddCTag = document.getElementById('btn-add-c-tag');
+  const btnAddHTag = document.getElementById('btn-add-h-tag');
+  const btnAddATag = document.getElementById('btn-add-a-tag');
+  const cTagSuggestions = document.getElementById('c-tag-suggestions');
+  const hTagSuggestions = document.getElementById('h-tag-suggestions');
+  const aTagSuggestions = document.getElementById('a-tag-suggestions');
+  
+  const peopleStatTotal = document.getElementById('people-stat-total');
+  const peopleStatActive = document.getElementById('people-stat-active');
+  const peopleStatSalary = document.getElementById('people-stat-salary');
+  const peopleStatCost = document.getElementById('people-stat-cost');
+  
+  const checkAllPeople = document.getElementById('check-all-people');
+  const draftTeamCount = document.getElementById('draft-team-count');
+  const teamBuilderEmpty = document.getElementById('team-builder-empty');
+  const teamBuilderContent = document.getElementById('team-builder-content');
+  const draftTeamMembers = document.getElementById('draft-team-members');
+  const consolidatedC = document.getElementById('consolidated-c');
+  const consolidatedH = document.getElementById('consolidated-h');
+  const consolidatedA = document.getElementById('consolidated-a');
+  const draftTeamCost = document.getElementById('draft-team-cost');
+  const btnGeneratePivotAction = document.getElementById('btn-generate-pivot-action');
 
   // Stats Elements
   const statTotal = document.getElementById('stat-total');
@@ -134,13 +199,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Carrega dados do localStorage
     loadLocalActions();
     loadLocalFCAs();
+    loadLocalHeadcount();
     
     // 3. Registra os ícones do Lucide
     lucide.createIcons();
+    initTagEditorListeners();
 
     // 4. Desenha UI Inicial
     renderActionsTable();
     renderFCAsTable();
+    renderHeadcountTable();
+    updateHeadcountStats();
     updateDashboard();
 
     // 5. Tenta conectar automaticamente se já houver um token válido salvo em sessão
@@ -188,17 +257,108 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // GERENCIAMENTO DE DADOS (LOCAL E REMOTO)
   // =========================================================================
+  const MOCK_ACTIONS = [
+    {
+      id: "act-1",
+      what: "Desligamento do colaborador ALINE DE FATIMA BASSO VALENCIO (ANALISTA DE TRANSPORTES JUNIOR - Logística).",
+      why: "Readequação de quadro de funcionários para otimização de custos e eficiência operacional do setor.",
+      where: "Logística",
+      area: "Logística",
+      when: "2026-05-28",
+      who: "RH, Diretor da Área",
+      how: "Realizar reunião de feedback demissional, processar trâmites legais da rescisão CLT, efetuar pagamento das verbas rescisórias e exame médico.",
+      howMuch: 8327.38,
+      status: "Não Iniciado",
+      statusReason: "",
+      evidence: "",
+      fcaId: "",
+      hasCashImpact: "Não",
+      cashImpactValue: 0,
+      project: "Pessoas",
+      peopleAction: "Redução",
+      peopleName: "ALINE DE FATIMA BASSO VALENCIO",
+      peopleCost: 8327.38,
+      peopleRole: "ANALISTA DE TRANSPORTES JUNIOR",
+      peopleList: JSON.stringify([{
+        action: "Redução",
+        name: "ALINE DE FATIMA BASSO VALENCIO",
+        role: "ANALISTA DE TRANSPORTES JUNIOR",
+        area: "Logística",
+        cost: 8327.38,
+        cadastro: "180"
+      }])
+    },
+    {
+      id: "act-2",
+      what: "Contratação de colaborador para reposição / expansão da posição de ASSISTENTE DE SUCESSO CLIENTE na área de Sucesso Cliente.",
+      why: "Atendimento à demanda de trabalho no setor e suporte ao crescimento das metas operacionais da área.",
+      where: "Sucesso Cliente",
+      area: "Sucesso Cliente",
+      when: "2026-05-29",
+      who: "RH, Líder da Área",
+      how: "Divulgação da vaga, triagem de currículos, entrevistas com candidatos, proposta formal de contratação e onboarding do novo funcionário.",
+      howMuch: 5642.22,
+      status: "Concluído",
+      statusReason: "",
+      evidence: "Contrato assinado - pasta de RH",
+      fcaId: "",
+      hasCashImpact: "Não",
+      cashImpactValue: 0,
+      project: "Pessoas",
+      peopleAction: "Contratação",
+      peopleName: "ANA CAROLINA ANDREO SPINOLA",
+      peopleCost: 5642.22,
+      peopleRole: "ASSISTENTE DE SUCESSO CLIENTE",
+      peopleList: JSON.stringify([{
+        action: "Contratação",
+        name: "ANA CAROLINA ANDREO SPINOLA",
+        role: "ASSISTENTE DE SUCESSO CLIENTE",
+        area: "Sucesso Cliente",
+        cost: 5642.22,
+        cadastro: "177"
+      }])
+    },
+    {
+      id: "act-3",
+      what: "Campanha de Tráfego Pago - Google Ads e Meta Ads",
+      why: "Aumentar a geração de leads qualificados para a equipe comercial em 25%.",
+      where: "Comercial",
+      area: "Comercial",
+      when: "2026-06-15",
+      who: "Agência de Marketing, Analista de Marketing",
+      how: "Configurar campanhas com foco em conversão de landing page, testar criativos novos semanalmente e realizar otimização diária de lances.",
+      howMuch: 15000,
+      status: "Iniciado",
+      statusReason: "",
+      evidence: "",
+      fcaId: "",
+      hasCashImpact: "Sim",
+      cashImpactValue: -15000,
+      project: "Marketing",
+      peopleAction: "Não",
+      peopleName: "",
+      peopleCost: 0,
+      peopleRole: "",
+      peopleList: "[]"
+    }
+  ];
+
   function loadLocalActions() {
     const raw = localStorage.getItem('5w2h_actions');
     if (raw) {
       try {
         actions = JSON.parse(raw);
+        if (actions.length === 0) {
+          actions = [...MOCK_ACTIONS];
+          saveLocalActions();
+        }
       } catch (e) {
         console.error("Erro ao carregar ações do localStorage:", e);
-        actions = [];
+        actions = [...MOCK_ACTIONS];
       }
     } else {
-      actions = [];
+      actions = [...MOCK_ACTIONS];
+      saveLocalActions();
     }
   }
 
@@ -233,6 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await GoogleDriveDB.saveActions(actions);
       await GoogleDriveDB.saveFCAs(fcas);
+      await GoogleDriveDB.saveHeadcount(headcount);
       showToast("Dados sincronizados com sucesso!", "success");
     } catch (err) {
       console.error("Erro ao sincronizar com Google Sheets:", err);
@@ -327,11 +488,22 @@ document.addEventListener('DOMContentLoaded', () => {
         saveLocalFCAs();
       }
 
+      // Sincroniza Headcount
+      const cloudHeadcount = await GoogleDriveDB.loadHeadcount();
+      if (cloudHeadcount.length === 0 && headcount.length > 0) {
+        // Se a nuvem estiver vazia, o local será sincronizado na primeira gravação
+      } else {
+        headcount = cloudHeadcount;
+        saveLocalHeadcount();
+      }
+
       dbConnected = true;
       updateConnectionStatus(true, 'connected');
       
       renderActionsTable();
       renderFCAsTable();
+      renderHeadcountTable();
+      updateHeadcountStats();
       updateDashboard();
       showToast("Conexão ao Google Drive estabelecida com sucesso!", "success");
 
@@ -454,10 +626,6 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Exibe container de Pessoas
       peopleActionContainer.style.display = 'block';
-      // Ativa o 'required' em todas as linhas de colaboradores
-      collaboratorsList.querySelectorAll('input, select').forEach(el => {
-        el.setAttribute('required', 'required');
-      });
     } else {
       // Exibe Area e Custo naturais
       fieldAreaGroup.style.display = 'block';
@@ -474,58 +642,45 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Oculta container de Pessoas
       peopleActionContainer.style.display = 'none';
-      // Desativa o 'required' em todas as linhas de colaboradores
-      collaboratorsList.querySelectorAll('input, select').forEach(el => {
-        el.removeAttribute('required');
-      });
     }
   }
 
-  function addCollaboratorRow(collabObj = null) {
-    const row = document.createElement('div');
-    row.className = 'collaborator-row';
-    
-    const isRequired = fieldProject.value === 'Pessoas' ? 'required' : '';
-    
-    row.innerHTML = `
-      <div class="collaborator-row-top">
-        <select class="input-control collab-action" ${isRequired}>
-          <option value="Contratação">Contratação</option>
-          <option value="Redução">Redução</option>
-          <option value="Migrar PJ">Migrar PJ</option>
-        </select>
-        <input type="text" class="input-control collab-name" placeholder="Nome completo" ${isRequired}>
-        <button type="button" class="btn-icon delete delete-collab" title="Remover Colaborador">
-          <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
-        </button>
-      </div>
-      <div class="collaborator-row-bottom">
-        <input type="text" class="input-control collab-role" placeholder="Cargo (Ex: Analista)" ${isRequired}>
-        <input type="text" class="input-control collab-area" placeholder="Área (Ex: Operações)" ${isRequired}>
-        <input type="number" class="input-control collab-cost" placeholder="Custo (R$)" min="0" step="0.01" ${isRequired}>
-      </div>
-    `;
-    
-    if (collabObj) {
-      row.querySelector('.collab-action').value = collabObj.action || 'Contratação';
-      row.querySelector('.collab-name').value = collabObj.name || '';
-      row.querySelector('.collab-role').value = collabObj.role || '';
-      row.querySelector('.collab-area').value = collabObj.area || '';
-      row.querySelector('.collab-cost').value = collabObj.cost !== undefined ? collabObj.cost : '';
+  function renderCollaboratorsReadOnly(collabList) {
+    collaboratorsListReadOnly.innerHTML = '';
+    if (!collabList || collabList.length === 0) {
+      collaboratorsListReadOnly.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); font-style: italic;">Nenhum colaborador movimentado.</span>`;
+      return;
     }
     
-    row.querySelector('.delete-collab').addEventListener('click', () => {
-      row.remove();
+    collabList.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'collab-read-only-item';
+      
+      const formattedCost = (c.cost || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+      let badgeStyle = '';
+      if (c.action === 'Contratação') badgeStyle = 'background: var(--status-completed-bg); color: var(--status-completed);';
+      else if (c.action === 'Redução') badgeStyle = 'background: var(--status-delayed-bg); color: var(--status-delayed);';
+      else if (c.action === 'Migrar PJ') badgeStyle = 'background: rgba(255, 152, 0, 0.15); color: #ff9800;';
+      else if (c.action === 'Enquadramento') badgeStyle = 'background: rgba(0, 242, 254, 0.15); color: var(--color-cyan);';
+      else badgeStyle = 'background: rgba(189, 0, 255, 0.15); color: #bd00ff;';
+      
+      item.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-weight: 600; color: var(--text-main);">${escapeHtml(capitalizeText(c.name))}</span>
+          <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(capitalizeText(c.role))} | ${escapeHtml(c.area)}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="badge" style="${badgeStyle}">${escapeHtml(c.action)}</span>
+          <span style="font-weight: 600; color: var(--text-main); font-size: 12px;">${formattedCost}</span>
+        </div>
+      `;
+      collaboratorsListReadOnly.appendChild(item);
     });
-    
-    collaboratorsList.appendChild(row);
-    lucide.createIcons();
   }
 
   fieldStatus.addEventListener('change', handleStatusChange);
   fieldHasCashImpact.addEventListener('change', handleCashImpactChange);
   fieldProject.addEventListener('change', handleProjectChange);
-  btnAddCollaborator.addEventListener('click', () => addCollaboratorRow());
 
   btnUploadEvidence.addEventListener('click', () => {
     evidenceFilePicker.click();
@@ -828,7 +983,8 @@ document.addEventListener('DOMContentLoaded', () => {
     actionFcaIdField.value = '';
     
     // Limpa a lista de colaboradores
-    collaboratorsList.innerHTML = '';
+    actionPeopleListField.value = '';
+    collaboratorsListReadOnly.innerHTML = '';
     
     if (actionToEdit) {
       modalTitle.innerText = "Editar Ação 5W2H";
@@ -862,34 +1018,18 @@ document.addEventListener('DOMContentLoaded', () => {
         fieldProjectCustom.value = actionToEdit.project;
       }
       
-      // Carrega os colaboradores do peopleList ou fallback
+      // Carrega os colaboradores do peopleList
       let collabList = [];
       if (actionToEdit.peopleList) {
         try {
           collabList = JSON.parse(actionToEdit.peopleList);
+          actionPeopleListField.value = actionToEdit.peopleList;
         } catch (e) {
           console.error("Erro parsing peopleList in openModal:", e);
         }
       }
       
-      if (!Array.isArray(collabList) || collabList.length === 0) {
-        // Fallback para campos legados se existirem
-        if (actionToEdit.peopleName || actionToEdit.peopleCost || (actionToEdit.peopleAction && actionToEdit.peopleAction !== 'Não')) {
-          collabList = [{
-            action: actionToEdit.peopleAction || 'Contratação',
-            name: actionToEdit.peopleName || '',
-            role: actionToEdit.peopleRole || '',
-            area: actionToEdit.area || '',
-            cost: actionToEdit.peopleCost || 0
-          }];
-        }
-      }
-      
-      if (collabList.length > 0) {
-        collabList.forEach(c => addCollaboratorRow(c));
-      } else {
-        addCollaboratorRow();
-      }
+      renderCollaboratorsReadOnly(collabList);
       
       handleStatusChange();
       handleCashImpactChange();
@@ -908,12 +1048,11 @@ document.addEventListener('DOMContentLoaded', () => {
       fieldHasCashImpact.value = 'Não';
       fieldCashImpactValue.value = '';
       
-      // Projeto e Movimentação de Pessoas - Padroniza para "Pessoas" por padrão
-      fieldProject.value = 'Pessoas';
+      // Projeto e Movimentação de Pessoas - Padroniza para "Sem Projeto" por padrão
+      fieldProject.value = 'Sem Projeto';
       fieldProjectCustom.value = '';
       
-      // Nova ação começa com uma linha de colaborador em branco
-      addCollaboratorRow();
+      renderCollaboratorsReadOnly([]);
       
       handleStatusChange();
       handleCashImpactChange();
@@ -954,27 +1093,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const isPessoasProj = finalProject === 'Pessoas';
 
     // Coleta as informações de colaboradores
-    const collabRows = collaboratorsList.querySelectorAll('.collaborator-row');
-    const collaborators = [];
+    let collaborators = [];
+    if (actionPeopleListField.value) {
+      try {
+        collaborators = JSON.parse(actionPeopleListField.value);
+      } catch (e) {
+        console.error("Erro parsing peopleList in submit:", e);
+      }
+    }
     let totalPeopleCost = 0;
     let names = [];
     let roles = [];
     let areas = [];
     let actionsTypes = new Set();
     
-    collabRows.forEach(row => {
-      const action = row.querySelector('.collab-action').value;
-      const name = row.querySelector('.collab-name').value.trim();
-      const role = row.querySelector('.collab-role').value.trim();
-      const area = row.querySelector('.collab-area').value.trim();
-      const cost = parseFloat(row.querySelector('.collab-cost').value) || 0;
-      
-      collaborators.push({ action, name, role, area, cost });
-      totalPeopleCost += cost;
-      if (name) names.push(name);
-      if (role) roles.push(role);
-      if (area) areas.push(area);
-      actionsTypes.add(action);
+    collaborators.forEach(c => {
+      totalPeopleCost += (c.cost || 0);
+      if (c.name) names.push(c.name);
+      if (c.role) roles.push(c.role);
+      if (c.area) areas.push(c.area);
+      if (c.action) actionsTypes.add(c.action);
     });
 
     if (isPessoasProj && collaborators.length === 0) {
@@ -1038,6 +1176,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderActionsTable();
     updateDashboard();
     closeModal();
+    
+    // Sincroniza o headcount de acordo com a movimentação realizada caso esteja "Concluído"
+    syncPessoasActionToHeadcount(actionData);
 
     if (dbConnected) {
       await syncWithDrive();
@@ -1071,20 +1212,37 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // FILTRAGEM E BUSCA DA TABELA
   // =========================================================================
-  actionSearch.addEventListener('input', renderActionsTable);
+  actionSearch.addEventListener('input', () => {
+    if (actionSearch.value.trim().length > 0) {
+      btnClearActionSearch.style.display = 'flex';
+    } else {
+      btnClearActionSearch.style.display = 'none';
+    }
+    renderActionsTable();
+  });
+  if (btnClearActionSearch) {
+    btnClearActionSearch.addEventListener('click', () => {
+      actionSearch.value = '';
+      btnClearActionSearch.style.display = 'none';
+      renderActionsTable();
+    });
+  }
   filterStatus.addEventListener('change', renderActionsTable);
 
   function getFilteredActions() {
-    const searchVal = actionSearch.value.toLowerCase().trim();
+    const searchVal = stripAccents(actionSearch.value.toLowerCase().trim());
     const statusVal = filterStatus.value;
 
     return actions.filter(act => {
       const matchesSearch = 
-        act.what.toLowerCase().includes(searchVal) ||
-        act.who.toLowerCase().includes(searchVal) ||
-        act.where.toLowerCase().includes(searchVal) ||
-        act.why.toLowerCase().includes(searchVal) ||
-        act.how.toLowerCase().includes(searchVal);
+        stripAccents(act.what.toLowerCase()).includes(searchVal) ||
+        stripAccents(act.who.toLowerCase()).includes(searchVal) ||
+        stripAccents(act.where.toLowerCase()).includes(searchVal) ||
+        stripAccents(act.why.toLowerCase()).includes(searchVal) ||
+        stripAccents(act.how.toLowerCase()).includes(searchVal) ||
+        (act.project && stripAccents(act.project.toLowerCase()).includes(searchVal)) ||
+        (act.area && stripAccents(act.area.toLowerCase()).includes(searchVal)) ||
+        (act.peopleName && stripAccents(act.peopleName.toLowerCase()).includes(searchVal));
 
       const matchesStatus = (statusVal === 'all') || (act.status === statusVal);
 
@@ -1163,10 +1321,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="font-size: 11px; line-height: 1.2; display: flex; flex-direction: column; gap: 1px;">
               <span style="color: ${colorStyle}; font-weight: 600; display: flex; align-items: center; gap: 4px;">
                 <i data-lucide="${iconName}" style="width: 12px; height: 12px; flex-shrink: 0;"></i>
-                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px;" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+                <span onclick="window.filterActionsByEmployee('${escapeHtml(c.name.replace(/'/g, "\\'"))}')" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; cursor: pointer; text-decoration: underline;" title="Filtrar por esta pessoa">${escapeHtml(capitalizeText(c.name))}</span>
               </span>
               <span style="font-size: 10px; color: var(--text-muted); padding-left: 16px;">
-                ${escapeHtml(c.role)} (${escapeHtml(c.action)})
+                ${escapeHtml(capitalizeText(c.role))} (${escapeHtml(c.action)})
               </span>
               <span style="font-size: 10px; color: var(--text-muted); font-weight: 500; padding-left: 16px;">
                 Custo: ${formattedPeopleCost}
@@ -1632,6 +1790,34 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/'/g, "&#039;");
   }
 
+  function capitalizeText(str) {
+    if (!str) return '';
+    const prepositions = ['de', 'do', 'da', 'dos', 'das', 'e', 'para', 'com', 'o', 'a'];
+    const acronyms = ['PJ', 'CLT', 'CRM', '3D', 'WMS', 'DRE', 'RH', 'CSAT', 'NPS', 'IT', 'TI', 'SLA', 'FCA', '5W2H', '5W', 'JR', 'PL', 'SR'];
+    
+    return str
+      .trim()
+      .split(/\s+/)
+      .map((word, index) => {
+        if (!word) return '';
+        const wordUpper = word.toUpperCase();
+        if (acronyms.includes(wordUpper)) {
+          return wordUpper;
+        }
+        const wordLower = word.toLowerCase();
+        if (prepositions.includes(wordLower) && index > 0) {
+          return wordLower;
+        }
+        return wordLower.charAt(0).toUpperCase() + wordLower.slice(1);
+      })
+      .join(' ');
+  }
+
+  function stripAccents(str) {
+    if (!str) return '';
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
   // =========================================================================
   // MÓDULO FCA - LÓGICA E EVENTOS [NEW]
   // =========================================================================
@@ -1833,6 +2019,994 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Ouvinte de busca na tabela de FCAs
   fcaSearch.addEventListener('input', renderFCAsTable);
+
+  // =========================================================================
+  // MÓDULO QUADRO DE PESSOAS - LÓGICA E EVENTOS [NEW]
+  // =========================================================================
+
+  // Dados Mockados dos 22 Colaboradores do print
+  const MOCK_HEADCOUNT = [
+    { id: "hc-1", cadastro: "180", name: "ALINE DE FATIMA BASSO VALENCIO", admission: "2025-11-13", role: "ANALISTA DE TRANSPORTES JUNIOR", area: "Logística", salary: 3785.25, cost: 8327.38, status: "Ativo", conhecimentos: "Logística, Rotas, Legislação", habilidades: "Roteirização, Negociação", atitudes: "Organização, Foco em Resultados", updatedAt: new Date().toISOString() },
+    { id: "hc-2", cadastro: "177", name: "ANA CAROLINA ANDREO SPINOLA", admission: "2025-10-16", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "Atendimento, CRM", habilidades: "Escuta Ativa, Resolução de Problemas", atitudes: "Empatia, Paciência", updatedAt: new Date().toISOString() },
+    { id: "hc-3", cadastro: "187", name: "ANA JULIA MATTURE FERREIRA ALVES", admission: "2026-04-02", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "CRM, Comunicação", habilidades: "Comunicação Escrita, Suporte", atitudes: "Proatividade, Simpatia", updatedAt: new Date().toISOString() },
+    { id: "hc-4", cadastro: "161", name: "ANGELO GUILHERME DOS SANTOS COM", admission: "2024-11-26", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "CRM, Zendesk", habilidades: "Suporte Técnico, SLA", atitudes: "Resiliência, Trabalho em Equipe", updatedAt: new Date().toISOString() },
+    { id: "hc-5", cadastro: "147", name: "CARLOS AUGUSTO BORGES LENCO", admission: "2024-06-04", role: "ANALISTA COMERCIAL JUNIOR", area: "Comercial", salary: 3332.64, cost: 7331.66, status: "Ativo", conhecimentos: "Vendas, CRM, Funil", habilidades: "Prospecção, Pitch de Vendas", atitudes: "Persistência, Iniciativa", updatedAt: new Date().toISOString() },
+    { id: "hc-6", cadastro: "186", name: "EMMANUELLE CRISTINA DE SOUZA", admission: "2026-04-02", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "CRM, Relatórios", habilidades: "Comunicação Verbal, Registro", atitudes: "Cordialidade, Disciplina", updatedAt: new Date().toISOString() },
+    { id: "hc-7", cadastro: "141", name: "FLAVIA SOARES CHAGAS", admission: "2024-05-02", role: "ANALISTA DE PRODUTOS PLENO", area: "Produto", salary: 5007.88, cost: 11017.11, status: "Ativo", conhecimentos: "Metodologia Ágil, Product Management", habilidades: "User Stories, Análise de Dados", atitudes: "Visão Sistêmica, Criatividade", updatedAt: new Date().toISOString() },
+    { id: "hc-8", cadastro: "139", name: "GABRIELLE MARTINS", admission: "2024-04-01", role: "AUXILIAR DE FINANCEIRO", area: "Financeiro", salary: 2415.51, cost: 5314.01, status: "Ativo", conhecimentos: "Contas a Pagar, Faturamento", habilidades: "Conciliação, Excel", atitudes: "Organização, Foco em Detalhes", updatedAt: new Date().toISOString() },
+    { id: "hc-9", cadastro: "132", name: "GISELE PEREIRA DOS SANTOS", admission: "2024-03-12", role: "ANALISTA DE SUCESSO DO CLIENTE", area: "Sucesso Cliente", salary: 3332.64, cost: 7331.66, status: "Ativo", conhecimentos: "NPS, CSAT, Retenção", habilidades: "Gestão de Contas, Métricas", atitudes: "Orientação para o Cliente, Proatividade", updatedAt: new Date().toISOString() },
+    { id: "hc-10", cadastro: "69", name: "JOAO VITOR FERREIRA TONELLO", admission: "2022-02-22", role: "DESIGNER 3D PL", area: "Marca e conteúdo", salary: 8266.98, cost: 18186.98, status: "Ativo", conhecimentos: "Blender, Maya, Modelagem", habilidades: "Modelagem 3D, Texturização", atitudes: "Foco Estético, Inovação", updatedAt: new Date().toISOString() },
+    { id: "hc-11", cadastro: "183", name: "JOSE CARLOS DE OLIVEIRA BRAGA", admission: "2026-02-03", role: "AUXILIAR DE EXPEDIÇÃO", area: "Logistica", salary: 2296.98, cost: 5053.25, status: "Ativo", conhecimentos: "Expedição, WMS", habilidades: "Embalagem, Separação", atitudes: "Agilidade, Responsabilidade", updatedAt: new Date().toISOString() },
+    { id: "hc-12", cadastro: "137", name: "JOYCE DE FATIMA PEREIRA DOS SANTO", admission: "2024-04-01", role: "ANALISTA DE LOGISTICA JR", area: "Logistica", salary: 3500.00, cost: 7699.84, status: "Ativo", conhecimentos: "Distribuição, Transportes", habilidades: "Roteirização, Controle de Custos", atitudes: "Foco em Soluções, Determinação", updatedAt: new Date().toISOString() },
+    { id: "hc-13", cadastro: "50", name: "LETICIA COLLA DE MELO", admission: "2021-07-01", role: "SOCIAL MÍDIA JR", area: "Marca e conteúdo", salary: 3785.25, cost: 8327.38, status: "Ativo", conhecimentos: "Redes Sociais, Copywriting, Marketing", habilidades: "Criação de Conteúdo, Gestão de Comunidades", atitudes: "Criatividade, Dinamismo", updatedAt: new Date().toISOString() },
+    { id: "hc-14", cadastro: "142", name: "LUCAS FERREIRA PONCE", admission: "2024-05-09", role: "ANALISTA FINANCEIRO JUNIOR", area: "Financeiro", salary: 3500.00, cost: 7699.84, status: "Ativo", conhecimentos: "Planejamento Financeiro, DRE", habilidades: "Fórmulas Excel, Modelagem Financeira", atitudes: "Raciocínio Lógico, Atenção", updatedAt: new Date().toISOString() },
+    { id: "hc-15", cadastro: "135", name: "MARIANA DA SILVEIRA ORASMO TAVARE", admission: "2024-03-12", role: "CONFERENTE", area: "Logistica", salary: 3500.00, cost: 7699.84, status: "Ativo", conhecimentos: "Conferência, Inventário", habilidades: "Conferência de Cargas, Paletização", atitudes: "Atenção a Detalhes, Dinamismo", updatedAt: new Date().toISOString() },
+    { id: "hc-16", cadastro: "181", name: "MARIANA PAULA DA SILVA", admission: "2025-12-02", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "CRM, Zendesk", habilidades: "Suporte, Chat", atitudes: "Cordialidade, Espírito de Equipe", updatedAt: new Date().toISOString() },
+    { id: "hc-17", cadastro: "176", name: "NAYLA MIREIA SANTOS DA CONCEICAO", admission: "2023-09-27", role: "CONSULTOR DE VENDAS ONLINE", area: "Comercial", salary: 2106.00, cost: 4633.10, status: "Ativo", conhecimentos: "Técnicas de Vendas, Funil", habilidades: "Negociação Online, Fechamento", atitudes: "Foco em Resultados, Persuasão", updatedAt: new Date().toISOString() },
+    { id: "hc-18", cadastro: "173", name: "PEDRO JOSE LESSI DOS SANTOS", admission: "2025-07-24", role: "ASSISTENTE DE SUCESSO CLIENTE", area: "Sucesso Cliente", salary: 2564.70, cost: 5642.22, status: "Ativo", conhecimentos: "Atendimento, CRM", habilidades: "Digitação Rápida, Suporte", atitudes: "Paciência, Calma", updatedAt: new Date().toISOString() },
+    { id: "hc-19", cadastro: "172", name: "STEFANY AGATA FERREIRA RIBEIRO", admission: "2025-07-16", role: "AUXILIAR DE MARKETING", area: "Marca e conteúdo", salary: 2415.51, cost: 5314.01, status: "Ativo", conhecimentos: "Redes Sociais, Inbound Marketing", habilidades: "Edição Básica, Disparo de Campanhas", atitudes: "Curiosidade, Vontade de Aprender", updatedAt: new Date().toISOString() },
+    { id: "hc-20", cadastro: "7", name: "VINICIUS TONOLLI MORTATI", admission: "2015-11-16", role: "ANALISTA COMERCIAL SENIOR", area: "Comercial", salary: 5723.29, cost: 12590.98, status: "Ativo", conhecimentos: "Key Accounts, Gestão de Leads", habilidades: "Negociação Complexa, Vendas Consultivas", atitudes: "Liderança, Visão Estratégica", updatedAt: new Date().toISOString() },
+    { id: "hc-21", cadastro: "60", name: "WENDEL MATEUS AMANCIO", admission: "2021-10-07", role: "ANALISTA DE CURADORIA JR", area: "Produto", salary: 3785.25, cost: 8327.38, status: "Ativo", conhecimentos: "Curadoria de Produtos, Pesquisa", habilidades: "Organização de Catálogo, Benchmark", atitudes: "Senso Estético, Concentração", updatedAt: new Date().toISOString() },
+    { id: "hc-22", cadastro: "185", name: "WERLLY GOMES FREIRE", admission: "2026-02-12", role: "AUXILIAR DE EXPEDIÇÃO", area: "Logistica", salary: 2296.98, cost: 5053.25, status: "Ativo", conhecimentos: "Expedição, Estoque", habilidades: "Carga e Descarga, Paletização", atitudes: "Pontualidade, Colaboração", updatedAt: new Date().toISOString() }
+  ];
+
+  // Carrega do localStorage
+  function loadLocalHeadcount() {
+    const raw = localStorage.getItem('5w2h_headcount');
+    if (raw) {
+      try {
+        headcount = JSON.parse(raw);
+        if (headcount.length === 0) {
+          headcount = [...MOCK_HEADCOUNT];
+          saveLocalHeadcount();
+        }
+      } catch (e) {
+        console.error("Erro ao carregar headcount do localStorage:", e);
+        headcount = [...MOCK_HEADCOUNT];
+      }
+    } else {
+      headcount = [...MOCK_HEADCOUNT];
+      saveLocalHeadcount();
+    }
+  }
+
+  // Grava localmente
+  function saveLocalHeadcount() {
+    localStorage.setItem('5w2h_headcount', JSON.stringify(headcount));
+  }
+
+  // Tenta enviar para a nuvem
+  async function syncHeadcountWithDrive() {
+    if (!dbConnected) return;
+    try {
+      await GoogleDriveDB.saveHeadcount(headcount);
+      showToast("Quadro de Pessoas sincronizado com o Drive!", "success");
+    } catch (err) {
+      console.error("Erro ao sincronizar headcount com Drive:", err);
+      showToast("Falha na sincronização do Headcount. Dados locais mantidos.", "error");
+    }
+  }
+
+  // Sanitização de entradas do Headcount
+  function sanitizeEmployeeData(val, type) {
+    if (val === undefined || val === null) {
+      if (type === 'number') return 0;
+      return '';
+    }
+    
+    let str = String(val).trim();
+    
+    if (type === 'number') {
+      // Limpa caracteres especiais de dinheiro
+      str = str.replace(/[R\$\s\.]/gi, '');
+      str = str.replace(',', '.');
+      const num = parseFloat(str);
+      return isNaN(num) ? 0 : num;
+    }
+    
+    if (type === 'date') {
+      // DD/MM/AAAA -> AAAA-MM-DD
+      const brDateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+      const match = str.match(brDateRegex);
+      if (match) {
+        return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+      }
+      
+      if (!isNaN(str) && Number(str) > 30000) {
+        // Conversão data numérica Excel
+        const dateObj = new Date((Number(str) - 25569) * 86400 * 1000);
+        return dateObj.toISOString().slice(0, 10);
+      }
+      
+      return str;
+    }
+    
+    return str;
+  }
+
+  // Renderiza a Tabela de Colaboradores
+  function renderHeadcountTable() {
+    const searchVal = stripAccents(peopleSearch.value.toLowerCase().trim());
+    const statusVal = filterPeopleStatus.value;
+
+    const filtered = headcount.filter(emp => {
+      const matchesSearch = 
+        stripAccents(emp.name.toLowerCase()).includes(searchVal) ||
+        stripAccents(emp.cadastro.toLowerCase()).includes(searchVal) ||
+        stripAccents(emp.role.toLowerCase()).includes(searchVal) ||
+        stripAccents(emp.area.toLowerCase()).includes(searchVal) ||
+        (emp.conhecimentos && stripAccents(emp.conhecimentos.toLowerCase()).includes(searchVal)) ||
+        (emp.habilidades && stripAccents(emp.habilidades.toLowerCase()).includes(searchVal)) ||
+        (emp.atitudes && stripAccents(emp.atitudes.toLowerCase()).includes(searchVal));
+
+      const matchesStatus = (statusVal === 'all') || (emp.status === statusVal);
+
+      return matchesSearch && matchesStatus;
+    });
+
+    peopleListBody.innerHTML = '';
+
+    if (filtered.length === 0) {
+      peopleEmptyState.style.display = 'block';
+      return;
+    }
+
+    peopleEmptyState.style.display = 'none';
+
+    filtered.forEach(emp => {
+      const tr = document.createElement('tr');
+      if (emp.status === 'Inativo') {
+        tr.style.opacity = '0.6';
+      }
+
+      const formattedSalary = (emp.salary || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const formattedCost = (emp.cost || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      // Renderiza Tags CHA
+      let chaHtml = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+      
+      if (emp.conhecimentos) {
+        const cTags = emp.conhecimentos.split(',').map(t => t.trim()).filter(t => t);
+        if (cTags.length > 0) {
+          chaHtml += `<div><div style="font-size:9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; font-weight:600;">Conhecimentos</div><div style="display: flex; flex-wrap: wrap; gap: 3px;">${cTags.map(t => `<span class="cha-pill c">${escapeHtml(t)}</span>`).join('')}</div></div>`;
+        }
+      }
+      if (emp.habilidades) {
+        const hTags = emp.habilidades.split(',').map(t => t.trim()).filter(t => t);
+        if (hTags.length > 0) {
+          chaHtml += `<div><div style="font-size:9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; font-weight:600;">Habilidades</div><div style="display: flex; flex-wrap: wrap; gap: 3px;">${hTags.map(t => `<span class="cha-pill h">${escapeHtml(t)}</span>`).join('')}</div></div>`;
+        }
+      }
+      if (emp.atitudes) {
+        const aTags = emp.atitudes.split(',').map(t => t.trim()).filter(t => t);
+        if (aTags.length > 0) {
+          chaHtml += `<div><div style="font-size:9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; font-weight:600;">Atitudes</div><div style="display: flex; flex-wrap: wrap; gap: 3px;">${aTags.map(t => `<span class="cha-pill a">${escapeHtml(t)}</span>`).join('')}</div></div>`;
+        }
+      }
+      chaHtml += '</div>';
+
+      const isChecked = selectedEmployeeIds.includes(emp.id) ? 'checked' : '';
+      const statusClass = emp.status === 'Ativo' ? 'badge-completed' : 'badge-cancelled';
+
+      tr.innerHTML = `
+        <td style="text-align: center; vertical-align: middle;">
+          <input type="checkbox" class="people-checkbox" data-id="${emp.id}" ${isChecked} style="cursor: pointer; width: 16px; height: 16px;">
+        </td>
+        <td style="vertical-align: middle;">
+          <div onclick="window.filterActionsByEmployee('${escapeHtml(emp.name.replace(/'/g, "\\'"))}')" style="font-weight: 600; color: var(--color-cyan); font-size:14px; cursor: pointer; text-decoration: underline;" title="Ver ações desta pessoa">${escapeHtml(capitalizeText(emp.name))}</div>
+          <div style="display:flex; gap: 8px; align-items:center; margin-top:4px;">
+            <span style="font-size: 11px; color: var(--text-muted);">Cadastro: ${escapeHtml(emp.cadastro)}</span>
+            <span class="badge ${statusClass}" style="font-size:10px; padding: 2px 6px;">${emp.status}</span>
+          </div>
+        </td>
+        <td style="vertical-align: middle;">
+          <div style="font-weight: 500;">${escapeHtml(capitalizeText(emp.role))}</div>
+          <span style="font-size:11px; color: var(--text-muted);">${escapeHtml(emp.area)}</span>
+        </td>
+        <td style="vertical-align: middle;">
+          ${chaHtml || '<span style="font-size:11px; color:var(--text-muted); font-style:italic;">Sem CHA cadastrado</span>'}
+        </td>
+        <td style="vertical-align: middle;">
+          <div class="cost-tag">${formattedSalary}</div>
+          <span style="font-size:11px; color: var(--color-cyan); font-weight:500;">Custo: ${formattedCost}</span>
+        </td>
+        <td style="vertical-align: middle; text-align: right;">
+          <div style="display: flex; align-items: center; gap: 10px; justify-content: flex-end; white-space: nowrap;">
+            <!-- Secondary links -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+              ${emp.status === 'Ativo' ? `
+                <a href="#" onclick="event.preventDefault(); triggerSingleEmployeeAction('${emp.id}', 'Migrar PJ');" style="color: #ff9800; font-size: 11px; text-decoration: none; font-weight: 600; cursor: pointer;" title="Transformar em PJ">Virar PJ</a>
+                <a href="#" onclick="event.preventDefault(); triggerSingleEmployeeAction('${emp.id}', 'Redução');" style="color: var(--status-delayed); font-size: 11px; text-decoration: none; font-weight: 600; cursor: pointer;" title="Demitir colaborador">Demitir</a>
+              ` : `
+                <a href="#" onclick="event.preventDefault(); triggerSingleEmployeeAction('${emp.id}', 'Contratação');" style="color: var(--status-completed); font-size: 11px; text-decoration: none; font-weight: 600; cursor: pointer;" title="Recontratar colaborador">Contratar</a>
+              `}
+            </div>
+            
+            <!-- Primary action button -->
+            <button onclick="triggerSingleEmployeeAction('${emp.id}', 'Enquadramento')" class="btn" style="padding: 4px 10px; font-size:11px; height:26px; min-height:26px; background: rgba(0, 242, 254, 0.1); color: var(--color-cyan); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;" title="Ajuste de Cargo/Salário">Enquadrar</button>
+            
+            <!-- Admin actions -->
+            <div style="display: flex; gap: 2px; align-items: center; border-left: 1px solid var(--border-normal); padding-left: 6px; margin-left: 2px;">
+              <button onclick="editEmployee('${emp.id}')" class="btn-icon edit" style="width:24px; height:24px; display: inline-flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; color: var(--text-muted);" title="Editar Cadastro">
+                <i data-lucide="edit-3" style="width:12px; height:12px;"></i>
+              </button>
+              <button onclick="deleteEmployee('${emp.id}')" class="btn-icon delete" style="width:24px; height:24px; display: inline-flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; color: var(--status-delayed);" title="Excluir Colaborador">
+                <i data-lucide="trash-2" style="width:12px; height:12px;"></i>
+              </button>
+            </div>
+          </div>
+        </td>
+      `;
+
+      peopleListBody.appendChild(tr);
+    });
+
+    // Registra eventos nos checkboxes das linhas
+    peopleListBody.querySelectorAll('.people-checkbox').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const id = cb.getAttribute('data-id');
+        if (cb.checked) {
+          if (!selectedEmployeeIds.includes(id)) {
+            selectedEmployeeIds.push(id);
+          }
+        } else {
+          selectedEmployeeIds = selectedEmployeeIds.filter(x => x !== id);
+        }
+        updateTeamBuilderPanel();
+      });
+    });
+
+    lucide.createIcons();
+  }
+
+  // Atualiza os Painéis de Estatísticas do Headcount
+  function updateHeadcountStats() {
+    const total = headcount.length;
+    const activeList = headcount.filter(e => e.status === 'Ativo');
+    const activeCount = activeList.length;
+    
+    const salarySum = activeList.reduce((sum, e) => sum + (e.salary || 0), 0);
+    const costSum = activeList.reduce((sum, e) => sum + (e.cost || 0), 0);
+
+    peopleStatTotal.innerText = total;
+    peopleStatActive.innerText = `${activeCount} ativos`;
+    peopleStatSalary.innerText = salarySum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    peopleStatCost.innerText = costSum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  // Atualiza o painel lateral do Team Builder
+  function updateTeamBuilderPanel() {
+    const count = selectedEmployeeIds.length;
+    draftTeamCount.innerText = `${count} selecionado${count !== 1 ? 's' : ''}`;
+
+    if (count === 0) {
+      teamBuilderEmpty.style.display = 'flex';
+      teamBuilderContent.style.display = 'none';
+      checkAllPeople.checked = false;
+      return;
+    }
+
+    teamBuilderEmpty.style.display = 'none';
+    teamBuilderContent.style.display = 'flex';
+
+    // Renders integrantes
+    draftTeamMembers.innerHTML = '';
+    const selectedEmployees = headcount.filter(e => selectedEmployeeIds.includes(e.id));
+    
+    selectedEmployees.forEach(emp => {
+      const pill = document.createElement('div');
+      pill.className = 'team-member-pill';
+      pill.style.cursor = 'pointer';
+      pill.innerHTML = `
+        <span style="font-weight: 600;" title="Filtrar e editar CHA de ${escapeHtml(capitalizeText(emp.name))}">${escapeHtml(capitalizeText(emp.name.split(' ')[0]))}</span>
+        <span class="remove-member" data-id="${emp.id}">&times;</span>
+      `;
+      pill.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-member')) return;
+        openEmployeeModal(emp);
+      });
+      pill.querySelector('.remove-member').addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedEmployeeIds = selectedEmployeeIds.filter(x => x !== emp.id);
+        const cb = peopleListBody.querySelector(`.people-checkbox[data-id="${emp.id}"]`);
+        if (cb) cb.checked = false;
+        updateTeamBuilderPanel();
+      });
+      draftTeamMembers.appendChild(pill);
+    });
+
+    // Consolida CHA
+    const cSet = new Set();
+    const hSet = new Set();
+    const aSet = new Set();
+
+    selectedEmployees.forEach(emp => {
+      if (emp.conhecimentos) emp.conhecimentos.split(',').forEach(t => { if (t.trim()) cSet.add(t.trim().toUpperCase()); });
+      if (emp.habilidades) emp.habilidades.split(',').forEach(t => { if (t.trim()) hSet.add(t.trim().toUpperCase()); });
+      if (emp.atitudes) emp.atitudes.split(',').forEach(t => { if (t.trim()) aSet.add(t.trim().toUpperCase()); });
+    });
+
+    consolidatedC.innerHTML = Array.from(cSet).map(t => escapeHtml(capitalizeText(t))).join(', ') || '<span style="color:var(--text-muted); font-style:italic;">Nenhum</span>';
+    consolidatedH.innerHTML = Array.from(hSet).map(t => escapeHtml(capitalizeText(t))).join(', ') || '<span style="color:var(--text-muted); font-style:italic;">Nenhum</span>';
+    consolidatedA.innerHTML = Array.from(aSet).map(t => escapeHtml(capitalizeText(t))).join(', ') || '<span style="color:var(--text-muted); font-style:italic;">Nenhum</span>';
+
+    // Custo Total
+    const costSum = selectedEmployees.reduce((sum, e) => sum + (e.cost || 0), 0);
+    draftTeamCost.innerText = costSum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  // Ouvinte checkAll na tabela de colaboradores
+  checkAllPeople.addEventListener('change', () => {
+    const isChecked = checkAllPeople.checked;
+    selectedEmployeeIds = [];
+    
+    peopleListBody.querySelectorAll('.people-checkbox').forEach(cb => {
+      cb.checked = isChecked;
+      if (isChecked) {
+        selectedEmployeeIds.push(cb.getAttribute('data-id'));
+      }
+    });
+
+    updateTeamBuilderPanel();
+  });
+
+  // Eventos de Filtro e Busca de Pessoas
+  peopleSearch.addEventListener('input', () => {
+    if (peopleSearch.value.trim().length > 0) {
+      btnClearPeopleSearch.style.display = 'flex';
+    } else {
+      btnClearPeopleSearch.style.display = 'none';
+    }
+    renderHeadcountTable();
+  });
+  if (btnClearPeopleSearch) {
+    btnClearPeopleSearch.addEventListener('click', () => {
+      peopleSearch.value = '';
+      btnClearPeopleSearch.style.display = 'none';
+      renderHeadcountTable();
+    });
+  }
+  filterPeopleStatus.addEventListener('change', renderHeadcountTable);
+
+  // MÓDULO CRUD DE COLABORADOR MANUAL
+  btnNewEmployee.addEventListener('click', () => {
+    openEmployeeModal();
+  });
+
+  btnEmployeeModalClose.addEventListener('click', closeEmployeeModal);
+  btnEmployeeCancel.addEventListener('click', closeEmployeeModal);
+
+  function openEmployeeModal(empToEdit = null) {
+    formEmployee.reset();
+    
+    // Reseta inputs temporários de tags
+    cTagNewInput.value = '';
+    hTagNewInput.value = '';
+    aTagNewInput.value = '';
+    
+    if (empToEdit) {
+      employeeModalTitle.innerText = "Editar Colaborador";
+      employeeIdField.value = empToEdit.id;
+      fieldEmployeeCadastro.value = empToEdit.cadastro;
+      fieldEmployeeName.value = empToEdit.name;
+      fieldEmployeeAdmission.value = empToEdit.admission;
+      fieldEmployeeStatus.value = empToEdit.status;
+      fieldEmployeeRole.value = empToEdit.role;
+      fieldEmployeeArea.value = empToEdit.area;
+      fieldEmployeeSalary.value = empToEdit.salary !== undefined ? empToEdit.salary : '';
+      fieldEmployeeCost.value = empToEdit.cost !== undefined ? empToEdit.cost : '';
+      
+      fieldEmployeeC.value = empToEdit.conhecimentos || '';
+      fieldEmployeeH.value = empToEdit.habilidades || '';
+      fieldEmployeeA.value = empToEdit.atitudes || '';
+      
+      currentEmployeeCTags = empToEdit.conhecimentos ? empToEdit.conhecimentos.split(',').map(t => t.trim()).filter(t => t) : [];
+      currentEmployeeHTags = empToEdit.habilidades ? empToEdit.habilidades.split(',').map(t => t.trim()).filter(t => t) : [];
+      currentEmployeeATags = empToEdit.atitudes ? empToEdit.atitudes.split(',').map(t => t.trim()).filter(t => t) : [];
+    } else {
+      employeeModalTitle.innerText = "Novo Colaborador";
+      employeeIdField.value = '';
+      fieldEmployeeStatus.value = 'Ativo';
+      fieldEmployeeAdmission.value = new Date().toISOString().slice(0, 10);
+      fieldEmployeeC.value = '';
+      fieldEmployeeH.value = '';
+      fieldEmployeeA.value = '';
+      
+      currentEmployeeCTags = [];
+      currentEmployeeHTags = [];
+      currentEmployeeATags = [];
+    }
+    
+    renderVisualTags('c');
+    renderVisualTags('h');
+    renderVisualTags('a');
+    
+    modalEmployee.classList.add('active');
+  }
+
+  function closeEmployeeModal() {
+    modalEmployee.classList.remove('active');
+  }
+
+  // LÓGICA DO EDITOR VISUAL DE TAGS (CHA)
+  function getSuggestions(type) {
+    const allTags = new Set();
+    headcount.forEach(emp => {
+      let fieldVal = '';
+      if (type === 'c') fieldVal = emp.conhecimentos;
+      else if (type === 'h') fieldVal = emp.habilidades;
+      else if (type === 'a') fieldVal = emp.atitudes;
+
+      if (fieldVal) {
+        fieldVal.split(',').forEach(tag => {
+          const trimmed = tag.trim();
+          if (trimmed) allTags.add(trimmed.toUpperCase());
+        });
+      }
+    });
+    return Array.from(allTags);
+  }
+
+  function renderVisualTags(type) {
+    let container, hiddenInput, activeList, suggestionContainer, cssClass;
+    if (type === 'c') {
+      container = cTagsVisualContainer;
+      hiddenInput = fieldEmployeeC;
+      activeList = currentEmployeeCTags;
+      suggestionContainer = cTagSuggestions;
+      cssClass = 'c';
+    } else if (type === 'h') {
+      container = hTagsVisualContainer;
+      hiddenInput = fieldEmployeeH;
+      activeList = currentEmployeeHTags;
+      suggestionContainer = hTagSuggestions;
+      cssClass = 'h';
+    } else {
+      container = aTagsVisualContainer;
+      hiddenInput = fieldEmployeeA;
+      activeList = currentEmployeeATags;
+      suggestionContainer = aTagSuggestions;
+      cssClass = 'a';
+    }
+
+    // Renderiza pills ativas
+    container.innerHTML = '';
+    if (activeList.length === 0) {
+      container.innerHTML = `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nenhuma tag adicionada. Digite abaixo ou selecione uma sugestão.</span>`;
+    } else {
+      activeList.forEach((tag, index) => {
+        const tagPill = document.createElement('div');
+        tagPill.className = `tag-editor-pill ${cssClass}`;
+        tagPill.innerHTML = `
+          <span>${escapeHtml(capitalizeText(tag))}</span>
+          <span class="remove-tag-btn" onclick="window.removeEmployeeTag('${type}', ${index})">&times;</span>
+        `;
+        container.appendChild(tagPill);
+      });
+    }
+
+    // Sincroniza com o input hidden
+    hiddenInput.value = activeList.join(', ');
+
+    // Renderiza sugestões de tags do banco existente
+    suggestionContainer.innerHTML = '';
+    const allSuggestions = getSuggestions(type);
+    const unusedSuggestions = allSuggestions.filter(s => !activeList.map(t => t.toUpperCase()).includes(s));
+
+    if (unusedSuggestions.length > 0) {
+      const label = document.createElement('div');
+      label.className = 'suggestion-label';
+      label.innerText = 'Tags sugeridas (clique para adicionar):';
+      suggestionContainer.appendChild(label);
+
+      unusedSuggestions.slice(0, 15).forEach(s => {
+        const suggPill = document.createElement('span');
+        suggPill.className = 'tag-suggestion-pill';
+        suggPill.innerText = capitalizeText(s);
+        suggPill.addEventListener('click', () => {
+          addEmployeeTag(type, s);
+        });
+        suggestionContainer.appendChild(suggPill);
+      });
+    }
+  }
+
+  function addEmployeeTag(type, value) {
+    if (!value) return;
+    const cleanValue = value.trim();
+    if (!cleanValue) return;
+
+    let activeList;
+    if (type === 'c') activeList = currentEmployeeCTags;
+    else if (type === 'h') activeList = currentEmployeeHTags;
+    else activeList = currentEmployeeATags;
+
+    const upperList = activeList.map(t => t.toUpperCase());
+    if (!upperList.includes(cleanValue.toUpperCase())) {
+      activeList.push(cleanValue);
+      renderVisualTags(type);
+    }
+  }
+
+  window.removeEmployeeTag = function(type, index) {
+    let activeList;
+    if (type === 'c') activeList = currentEmployeeCTags;
+    else if (type === 'h') activeList = currentEmployeeHTags;
+    else activeList = currentEmployeeATags;
+
+    activeList.splice(index, 1);
+    renderVisualTags(type);
+  };
+
+  function initTagEditorListeners() {
+    // Conhecimentos
+    btnAddCTag.addEventListener('click', () => {
+      addEmployeeTag('c', cTagNewInput.value);
+      cTagNewInput.value = '';
+    });
+    cTagNewInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addEmployeeTag('c', cTagNewInput.value);
+        cTagNewInput.value = '';
+      }
+    });
+
+    // Habilidades
+    btnAddHTag.addEventListener('click', () => {
+      addEmployeeTag('h', hTagNewInput.value);
+      hTagNewInput.value = '';
+    });
+    hTagNewInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addEmployeeTag('h', hTagNewInput.value);
+        hTagNewInput.value = '';
+      }
+    });
+
+    // Atitudes
+    btnAddATag.addEventListener('click', () => {
+      addEmployeeTag('a', aTagNewInput.value);
+      aTagNewInput.value = '';
+    });
+    aTagNewInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addEmployeeTag('a', aTagNewInput.value);
+        aTagNewInput.value = '';
+      }
+    });
+  }
+
+  formEmployee.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const id = employeeIdField.value;
+    const isEdit = id !== '';
+
+    // Sanitiza e formata os dados de salário e custo
+    const salary = sanitizeEmployeeData(fieldEmployeeSalary.value, 'number');
+    const cost = sanitizeEmployeeData(fieldEmployeeCost.value, 'number');
+
+    const empData = {
+      id: isEdit ? id : 'hc-' + crypto.randomUUID(),
+      cadastro: fieldEmployeeCadastro.value.trim(),
+      name: fieldEmployeeName.value.trim().toUpperCase(),
+      admission: fieldEmployeeAdmission.value,
+      status: fieldEmployeeStatus.value,
+      role: fieldEmployeeRole.value.trim().toUpperCase(),
+      area: fieldEmployeeArea.value.trim(),
+      salary: salary,
+      cost: cost,
+      conhecimentos: fieldEmployeeC.value.trim(),
+      habilidades: fieldEmployeeH.value.trim(),
+      atitudes: fieldEmployeeA.value.trim(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (isEdit) {
+      headcount = headcount.map(emp => emp.id === id ? empData : emp);
+      showToast("Cadastro atualizado com sucesso!", "success");
+    } else {
+      headcount.push(empData);
+      showToast("Novo colaborador registrado com sucesso!", "success");
+    }
+
+    saveLocalHeadcount();
+    renderHeadcountTable();
+    updateHeadcountStats();
+    updateTeamBuilderPanel();
+    closeEmployeeModal();
+
+    if (dbConnected) {
+      await syncHeadcountWithDrive();
+    }
+  });
+
+  window.editEmployee = function(id) {
+    const emp = headcount.find(e => e.id === id);
+    if (emp) {
+      openEmployeeModal(emp);
+    }
+  };
+
+  window.deleteEmployee = async function(id) {
+    if (confirm("Tem certeza que deseja remover este colaborador do cadastro?")) {
+      headcount = headcount.filter(e => e.id !== id);
+      selectedEmployeeIds = selectedEmployeeIds.filter(x => x !== id);
+      
+      saveLocalHeadcount();
+      renderHeadcountTable();
+      updateHeadcountStats();
+      updateTeamBuilderPanel();
+      showToast("Colaborador removido!", "info");
+
+      if (dbConnected) {
+        await syncHeadcountWithDrive();
+      }
+    }
+  };
+
+  // Importação da Planilha de Quadro Pessoas Excel
+  btnImportPeopleXlsx.addEventListener('click', () => {
+    peopleXlsxFilePicker.click();
+  });
+
+  peopleXlsxFilePicker.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    importPeopleExcelFile(file);
+    peopleXlsxFilePicker.value = '';
+  });
+
+  async function importPeopleExcelFile(file) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Pega a primeira aba
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        
+        if (rows.length <= 1) {
+          showToast("A planilha importada está vazia ou sem cabeçalhos.", "error");
+          return;
+        }
+
+        const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+        
+        // Mapeia colunas
+        const colMap = {
+          cadastro: headers.findIndex(h => h.includes("cadastro") || h.includes("cod") || h.includes("chapa")),
+          name: headers.findIndex(h => h.includes("relação") || h.includes("quadro") || h.includes("nome") || h.includes("colaborador") || h.includes("name")),
+          role: headers.findIndex(h => h.includes("cargo") || h.includes("role") || h.includes("função")),
+          area: headers.findIndex(h => h.includes("área") || h.includes("area") || h.includes("setor") || h.includes("departamento")),
+          salary: headers.findIndex(h => h.includes("salário") || h.includes("salario") || h.includes("salary")),
+          cost: headers.findIndex(h => h.includes("custo") || h.includes("cost") || h.includes("total")),
+          admission: headers.findIndex(h => h.includes("admissão") || h.includes("admissao") || h.includes("data") || h.includes("admission")),
+          status: headers.indexOf("status"),
+          conhecimentos: headers.findIndex(h => h.includes("conhecimento") || h.includes("cha") || h.includes("c")),
+          habilidades: headers.findIndex(h => h.includes("habilidade") || h.includes("h")),
+          atitudes: headers.findIndex(h => h.includes("atitude") || h.includes("a"))
+        };
+
+        if (colMap.name === -1) {
+          showToast("Não foi possível localizar a coluna com o Nome do Colaborador (ex: Relação de Quadro Mensal).", "error");
+          return;
+        }
+
+        let importedCount = 0;
+        const nowStr = new Date().toISOString();
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || row.length === 0) continue;
+
+          const rawName = row[colMap.name];
+          if (!rawName) continue;
+
+          const name = String(rawName).trim().toUpperCase();
+          const cadastro = colMap.cadastro !== -1 && row[colMap.cadastro] ? String(row[colMap.cadastro]).trim() : String(Date.now() + i);
+          const role = colMap.role !== -1 && row[colMap.role] ? String(row[colMap.role]).trim().toUpperCase() : 'NÃO DEFINIDO';
+          const area = colMap.area !== -1 && row[colMap.area] ? String(row[colMap.area]).trim() : 'Sem Setor';
+          
+          const rawSalary = colMap.salary !== -1 ? row[colMap.salary] : 0;
+          const rawCost = colMap.cost !== -1 ? row[colMap.cost] : 0;
+          const salary = sanitizeEmployeeData(rawSalary, 'number');
+          const cost = sanitizeEmployeeData(rawCost, 'number');
+          
+          const rawAdmission = colMap.admission !== -1 ? row[colMap.admission] : nowStr.slice(0,10);
+          const admission = sanitizeEmployeeData(rawAdmission, 'date') || nowStr.slice(0, 10);
+          
+          const status = colMap.status !== -1 && row[colMap.status] ? String(row[colMap.status]).trim() : 'Ativo';
+          
+          const conhecimentos = colMap.conhecimentos !== -1 && row[colMap.conhecimentos] ? String(row[colMap.conhecimentos]).trim() : '';
+          const habilidades = colMap.habilidades !== -1 && row[colMap.habilidades] ? String(row[colMap.habilidades]).trim() : '';
+          const atitudes = colMap.atitudes !== -1 && row[colMap.atitudes] ? String(row[colMap.atitudes]).trim() : '';
+
+          const empData = {
+            id: 'hc-' + crypto.randomUUID(),
+            cadastro,
+            name,
+            admission,
+            status,
+            role,
+            area,
+            salary,
+            cost,
+            conhecimentos,
+            habilidades,
+            atitudes,
+            updatedAt: nowStr
+          };
+
+          // Verifica duplicidade baseada em Nome ou Cadastro
+          const existingIndex = headcount.findIndex(e => e.cadastro === cadastro || e.name === name);
+          if (existingIndex !== -1) {
+            // Preserva ID e apenas atualiza
+            empData.id = headcount[existingIndex].id;
+            headcount[existingIndex] = empData;
+          } else {
+            headcount.push(empData);
+          }
+          importedCount++;
+        }
+
+        saveLocalHeadcount();
+        renderHeadcountTable();
+        updateHeadcountStats();
+        updateTeamBuilderPanel();
+        
+        if (dbConnected) {
+          await syncHeadcountWithDrive();
+        }
+
+        showToast(`Importação Concluída! ${importedCount} colaboradores importados/atualizados.`, "success");
+      } catch (err) {
+        console.error(err);
+        showToast(`Erro ao importar funcionários: ${err.message}`, "error");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // FILTRAR AÇÕES POR NOME DE COLABORADOR
+  window.filterActionsByEmployee = function(name) {
+    if (!name) return;
+    actionSearch.value = name.trim();
+    if (btnClearActionSearch) btnClearActionSearch.style.display = 'flex';
+    renderActionsTable();
+    switchTab('actions-view');
+    showToast(`Filtrado por: ${capitalizeText(name)}`, "info");
+  };
+
+  // AUTOMATED 5W2H ACTIONS GENERATORS FROM HEADCOUNT TAB
+  window.triggerSingleEmployeeAction = function(id, actionType) {
+    const emp = headcount.find(e => e.id === id);
+    if (!emp) return;
+    
+    const collaborator = {
+      action: actionType, // 'Contratação', 'Redução', 'Migrar PJ', 'Enquadramento'
+      name: emp.name,
+      role: emp.role,
+      area: emp.area,
+      cost: emp.cost,
+      cadastro: emp.cadastro
+    };
+    
+    openModal(); // Abre modal limpo
+    
+    modalTitle.innerText = `Nova Ação 5W2H - Movimentação (${actionType})`;
+    fieldProject.value = 'Pessoas';
+    handleProjectChange();
+    
+    actionPeopleListField.value = JSON.stringify([collaborator]);
+    renderCollaboratorsReadOnly([collaborator]);
+    
+    let whatVal = '';
+    let whyVal = '';
+    let howVal = '';
+    let whoVal = '';
+    
+    if (actionType === 'Redução') {
+      whatVal = `Desligamento do colaborador ${emp.name} (${emp.role} - ${emp.area}).`;
+      whyVal = `Readequação de quadro de funcionários para otimização de custos e eficiência operacional do setor.`;
+      whoVal = `RH, Diretor da Área`;
+      howVal = `Realizar reunião de feedback demissional, processar trâmites legais da rescisão CLT, efetuar pagamento das verbas rescisórias e exame médico.`;
+    } else if (actionType === 'Migrar PJ') {
+      whatVal = `Migração do regime de contratação do colaborador ${emp.name} (${emp.role} - ${emp.area}) de CLT para PJ.`;
+      whyVal = `Otimização de custos trabalhistas de folha de pagamento e alinhamento a modelo flexível de contratação.`;
+      whoVal = `RH, Financeiro, ${emp.name}`;
+      howVal = `Definir novos termos de remuneração PJ, orientar o colaborador na abertura/regularização de CNPJ e emissão de notas, assinar termo de rescisão CLT e novo contrato PJ.`;
+    } else if (actionType === 'Enquadramento') {
+      whatVal = `Enquadramento salarial e de cargo do colaborador ${emp.name} (${emp.role} - ${emp.area}).`;
+      whyVal = `Promoção meritocrática ou equiparação salarial do colaborador às novas responsabilidades do cargo.`;
+      whoVal = `RH, Gestor da Área`;
+      howVal = `Aprovar reajuste junto à diretoria, atualizar registro na carteira de trabalho (CTPS) digital e ajustar a remuneração no sistema de folha de pagamento.`;
+    } else if (actionType === 'Contratação') {
+      whatVal = `Contratação de colaborador para reposição / expansão da posição de ${emp.role} na área de ${emp.area}.`;
+      whyVal = `Atendimento à demanda de trabalho no setor e suporte ao crescimento das metas operacionais da área.`;
+      whoVal = `RH, Líder da Área`;
+      howVal = `Divulgação da vaga, triagem de currículos, entrevistas com candidatos, proposta formal de contratação e onboarding do novo funcionário.`;
+    }
+    
+    fieldWhat.value = whatVal;
+    fieldWhy.value = whyVal;
+    fieldWho.value = whoVal;
+    fieldWhere.value = emp.area;
+    fieldArea.value = emp.area;
+    fieldHow.value = howVal;
+    fieldHowMuch.value = emp.cost;
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    fieldWhen.value = tomorrow.toISOString().slice(0, 10);
+    
+    switchTab('actions-view');
+    showToast("Ação de movimentação pré-preenchida! Clique em Salvar.", "success");
+  };
+
+  // Gerar ação 5W de Pivot com o time selecionado
+  btnGeneratePivotAction.addEventListener('click', triggerPivotTeamAction);
+
+  function triggerPivotTeamAction() {
+    if (selectedEmployeeIds.length === 0) {
+      showToast("Selecione pelo menos um colaborador para o time.", "error");
+      return;
+    }
+    
+    const selectedEmployees = headcount.filter(e => selectedEmployeeIds.includes(e.id));
+    const collaborators = selectedEmployees.map(e => ({
+      action: 'Alocação Pivot',
+      name: e.name,
+      role: e.role,
+      area: e.area,
+      cost: e.cost,
+      cadastro: e.cadastro
+    }));
+    
+    const totalCost = selectedEmployees.reduce((sum, e) => sum + e.cost, 0);
+    const names = selectedEmployees.map(e => e.name).join(', ');
+    
+    // Consolida CHA tags
+    let knowledgeSet = new Set();
+    let skillsSet = new Set();
+    selectedEmployees.forEach(e => {
+      if (e.conhecimentos) e.conhecimentos.split(',').forEach(t => { if (t.trim()) knowledgeSet.add(t.trim()); });
+      if (e.habilidades) e.habilidades.split(',').forEach(t => { if (t.trim()) skillsSet.add(t.trim()); });
+    });
+    
+    const consolidatedKnowledge = Array.from(knowledgeSet).join(', ');
+    const consolidatedSkills = Array.from(skillsSet).join(', ');
+
+    openModal(); // Abre modal limpo
+    
+    modalTitle.innerText = "Nova Ação 5W2H - Pivot de Time";
+    fieldProject.value = 'Pessoas';
+    handleProjectChange();
+    
+    actionPeopleListField.value = JSON.stringify(collaborators);
+    renderCollaboratorsReadOnly(collaborators);
+    
+    fieldWhat.value = `Montagem e alocação de time multidisciplinar focado no pivot estratégico empresarial.`;
+    fieldWhy.value = `Execução e validação de novo direcionamento de negócio utilizando competências chave em conhecimentos (${consolidatedKnowledge}) e habilidades (${consolidatedSkills}) do time alocado.`;
+    fieldWho.value = names;
+    fieldWhere.value = 'Operações / Nova Frente de Negócio';
+    fieldArea.value = 'Foco em Pivot';
+    fieldHow.value = `Realizar o alinhamento da nova estratégia com a equipe, definir metas individuais, iniciar rituais ágeis de acompanhamento diário (daily) e sprints de validação de mercado.`;
+    fieldHowMuch.value = totalCost;
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    fieldWhen.value = tomorrow.toISOString().slice(0, 10);
+    
+    switchTab('actions-view');
+    showToast("Formulário de Ação preenchido! Clique em Salvar para registrar.", "success");
+  }
+
+  // Sincroniza o status do colaborador no headcount com base na conclusão do 5W2H
+  function syncPessoasActionToHeadcount(actionData) {
+    if (actionData.project !== 'Pessoas' || actionData.status !== 'Concluído') return;
+    
+    let collabs = [];
+    if (actionData.peopleList) {
+      try {
+        collabs = JSON.parse(actionData.peopleList);
+      } catch (e) {
+        console.error("Erro parsing peopleList in syncPessoasActionToHeadcount:", e);
+        return;
+      }
+    }
+    
+    if (collabs.length === 0) return;
+    
+    let headcountChanged = false;
+    const nowStr = new Date().toISOString();
+    
+    collabs.forEach(c => {
+      // Procura funcionário por Cadastro ou por Nome aproximado
+      let emp = headcount.find(e => e.cadastro === c.cadastro || e.name.toLowerCase().trim() === c.name.toLowerCase().trim());
+      
+      if (c.action === 'Redução') {
+        if (emp) {
+          emp.status = 'Inativo';
+          emp.updatedAt = nowStr;
+          headcountChanged = true;
+          console.log(`Colaborador ${emp.name} desativado via ação de Redução.`);
+        }
+      } else if (c.action === 'Contratação') {
+        if (emp) {
+          emp.status = 'Ativo';
+          emp.role = c.role;
+          emp.area = c.area;
+          emp.cost = c.cost;
+          emp.salary = emp.salary || (c.cost * 0.5);
+          emp.updatedAt = nowStr;
+          headcountChanged = true;
+          console.log(`Colaborador existente ${emp.name} reativado via contratação.`);
+        } else {
+          // Cria novo
+          const newEmp = {
+            id: 'hc-' + crypto.randomUUID(),
+            cadastro: c.cadastro || String(Date.now() % 10000),
+            name: c.name.toUpperCase(),
+            admission: new Date().toISOString().slice(0, 10),
+            role: c.role.toUpperCase(),
+            area: c.area,
+            salary: c.cost * 0.45, // estimativa baseada no print (remuneração CLT padrão)
+            cost: c.cost,
+            status: 'Ativo',
+            conhecimentos: '',
+            habilidades: '',
+            atitudes: '',
+            updatedAt: nowStr
+          };
+          headcount.push(newEmp);
+          headcountChanged = true;
+          console.log(`Novo colaborador ${newEmp.name} cadastrado via contratação.`);
+        }
+      } else if (c.action === 'Migrar PJ') {
+        if (emp) {
+          emp.status = 'Ativo';
+          emp.role = c.role;
+          emp.area = c.area;
+          emp.cost = c.cost;
+          emp.salary = 0; // Contrato PJ não possui salário base CLT
+          emp.updatedAt = nowStr;
+          headcountChanged = true;
+          console.log(`Colaborador ${emp.name} atualizado regime para PJ.`);
+        }
+      } else if (c.action === 'Enquadramento') {
+        if (emp) {
+          emp.status = 'Ativo';
+          emp.role = c.role;
+          emp.area = c.area;
+          emp.cost = c.cost;
+          emp.salary = c.cost * 0.45; // atualiza proporção CLT
+          emp.updatedAt = nowStr;
+          headcountChanged = true;
+          console.log(`Colaborador ${emp.name} atualizado por Enquadramento.`);
+        }
+      } else if (c.action === 'Alocação Pivot') {
+        if (emp) {
+          emp.status = 'Ativo';
+          emp.updatedAt = nowStr;
+          headcountChanged = true;
+        }
+      }
+    });
+    
+    if (headcountChanged) {
+      saveLocalHeadcount();
+      renderHeadcountTable();
+      updateHeadcountStats();
+      syncHeadcountWithDrive();
+    }
+  }
 
   // =========================================================================
   // EXECUTA A INICIALIZAÇÃO

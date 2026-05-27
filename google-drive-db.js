@@ -193,6 +193,7 @@ class GoogleDriveDB {
         console.log(`Planilha existente encontrada! ID: ${this.spreadsheetId}`);
         await this.detectSheetName();
         await this.ensureFcaSheetExists();
+        await this.ensureHeadcountSheetExists();
         await this.initializeHeaders(); // Garante cabeçalhos atualizados
       } else {
         // Planilha não encontrada! Vamos criá-la dentro da pasta corporativa correspondente
@@ -281,6 +282,7 @@ class GoogleDriveDB {
     
     // Garante que a aba de FCA também seja criada
     await this.ensureFcaSheetExists();
+    await this.ensureHeadcountSheetExists();
   }
 
   /**
@@ -343,6 +345,69 @@ class GoogleDriveDB {
       }
     } else {
       console.log("Aba FCA_Database já existe.");
+    }
+  }
+
+  /**
+   * Garante que a aba Headcount_Database exista na planilha, criando-a se necessário.
+   */
+  static async ensureHeadcountSheetExists() {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}?fields=sheets.properties`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error("Falha ao recuperar metadados da planilha para verificar aba Headcount.");
+    }
+
+    const data = await response.json();
+    const hcSheet = data.sheets.find(s => s.properties.title === 'Headcount_Database');
+    
+    if (!hcSheet) {
+      console.log("Aba Headcount_Database não encontrada. Criando...");
+      const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}:batchUpdate`;
+      const batchBody = {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: 'Headcount_Database'
+              }
+            }
+          }
+        ]
+      };
+
+      const addResponse = await fetch(batchUrl, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(batchBody)
+      });
+
+      if (!addResponse.ok) {
+        throw new Error("Falha ao criar a aba Headcount_Database na planilha.");
+      }
+
+      console.log("Aba Headcount_Database criada. Inicializando cabeçalhos...");
+      // Inicializa os cabeçalhos do Headcount
+      const headerUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/Headcount_Database!A1:M1?valueInputOption=USER_ENTERED`;
+      const headers = [
+        ["ID", "Cadastro", "Nome", "Admissao", "Cargo", "Area", "Salario", "Custo", "Status", "Conhecimentos", "Habilidades", "Atitudes", "AtualizadoEm"]
+      ];
+
+      const headerResponse = await fetch(headerUrl, {
+        method: 'PUT',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ values: headers })
+      });
+
+      if (!headerResponse.ok) {
+        throw new Error("Falha ao inicializar cabeçalhos da aba Headcount_Database.");
+      }
+    } else {
+      console.log("Aba Headcount_Database já existe.");
     }
   }
 
@@ -563,6 +628,99 @@ class GoogleDriveDB {
 
     if (!writeResponse.ok) {
       throw new Error("Falha ao gravar novos FCAs durante a sincronização.");
+    }
+  }
+
+  /**
+   * Carrega todos os colaboradores do headcount registrados na planilha.
+   */
+  static async loadHeadcount() {
+    if (!this.spreadsheetId) {
+      throw new Error("Não conectado ao banco de dados do Drive. Conecte primeiro.");
+    }
+
+    const range = 'Headcount_Database!A2:M';
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${range}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`Falha ao ler dados do Headcount (${response.status}).`);
+    }
+
+    const data = await response.json();
+    const rows = data.values || [];
+    
+    return rows.map(row => ({
+      id: row[0] || '',
+      cadastro: row[1] || '',
+      name: row[2] || '',
+      admission: row[3] || '',
+      role: row[4] || '',
+      area: row[5] || '',
+      salary: parseFloat(row[6]) || 0,
+      cost: parseFloat(row[7]) || 0,
+      status: row[8] || 'Ativo',
+      conhecimentos: row[9] || '',
+      habilidades: row[10] || '',
+      atitudes: row[11] || '',
+      updatedAt: row[12] || new Date().toISOString()
+    }));
+  }
+
+  /**
+   * Sobrescreve toda a lista de headcount na planilha.
+   * @param {Array} headcountList - Lista completa de headcount.
+   */
+  static async saveHeadcount(headcountList) {
+    if (!this.spreadsheetId) {
+      throw new Error("Não conectado ao banco de dados do Drive. Conecte primeiro.");
+    }
+
+    const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/Headcount_Database!A2:M:clear`;
+    const clearResponse = await fetch(clearUrl, {
+      method: 'POST',
+      headers: this.getHeaders()
+    });
+
+    if (!clearResponse.ok) {
+      throw new Error("Falha ao limpar headcount antigo na sincronização.");
+    }
+
+    if (headcountList.length === 0) {
+      return;
+    }
+
+    const values = headcountList.map(hc => [
+      hc.id,
+      hc.cadastro || '',
+      hc.name || '',
+      hc.admission || '',
+      hc.role || '',
+      hc.area || '',
+      hc.salary || 0,
+      hc.cost || 0,
+      hc.status || 'Ativo',
+      hc.conhecimentos || '',
+      hc.habilidades || '',
+      hc.atitudes || '',
+      hc.updatedAt || new Date().toISOString()
+    ]);
+
+    const updateRange = `Headcount_Database!A2:M${headcountList.length + 1}`;
+    const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${updateRange}?valueInputOption=USER_ENTERED`;
+
+    const writeResponse = await fetch(updateUrl, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ values })
+    });
+
+    if (!writeResponse.ok) {
+      throw new Error("Falha ao gravar novos dados do Headcount durante a sincronização.");
     }
   }
 

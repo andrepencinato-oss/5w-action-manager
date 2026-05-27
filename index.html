@@ -6,7 +6,7 @@
   <title>5W2H Action Monitor | Gestão Inteligente</title>
   
   <!-- CSS Principal -->
-  <link rel="stylesheet" href="style.css?v=1.1">
+  <link rel="stylesheet" href="style.css?v=2.4">
 </head>
 <body>
 
@@ -32,6 +32,9 @@
         </button>
         <button class="tab-btn" data-target="fca-view">
           <i data-lucide="clipboard-list"></i> Análises FCA
+        </button>
+        <button class="tab-btn" data-target="people-view">
+          <i data-lucide="users"></i> Quadro de Pessoas
         </button>
       </nav>
 
@@ -172,7 +175,12 @@
         <!-- Barra de Ferramentas / Filtros -->
         <div class="actions-toolbar">
           <div class="search-filter-wrapper">
-            <input type="text" id="action-search" class="input-search" placeholder="Buscar por O Que, Quem ou Setor...">
+            <div style="position: relative; flex: 1; display: flex; align-items: center;">
+              <input type="text" id="action-search" class="input-search" placeholder="Buscar por O Que, Quem ou Setor..." style="width: 100%; padding-right: 40px;">
+              <button id="btn-clear-action-search" class="btn-icon" title="Limpar Busca" style="position: absolute; right: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; display: none; width: 24px; height: 24px; align-items: center; justify-content: center;">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
             
             <select id="filter-status" class="select-filter">
               <option value="all">Todos os Status</option>
@@ -267,6 +275,162 @@
 
       </section>
 
+      <!-- ==========================================
+           TELA 5: GESTÃO DO QUADRO DE PESSOAS [NEW]
+           ========================================== -->
+      <section id="people-view" class="view-panel">
+        
+        <!-- Cards de Estatísticas de Pessoas -->
+        <div class="stats-summary">
+          <div class="stat-card total" style="padding: 16px 24px; min-height: auto;">
+            <span class="stat-label">Total de Colaboradores</span>
+            <span id="people-stat-total" class="stat-value" style="font-size: 24px;">0</span>
+            <span id="people-stat-active" class="stat-meta">0 ativos</span>
+          </div>
+          <div class="stat-card progress" style="padding: 16px 24px; min-height: auto; --color-cyan: var(--status-progress);">
+            <span class="stat-label">Custo Mensal da Folha</span>
+            <span id="people-stat-salary" class="stat-value" style="font-size: 24px;">R$ 0,00</span>
+            <span class="stat-meta">Somente Salário Base</span>
+          </div>
+          <div class="stat-card completed" style="padding: 16px 24px; min-height: auto; --color-cyan: var(--status-completed);">
+            <span class="stat-label">Custo Mensal Total</span>
+            <span id="people-stat-cost" class="stat-value" style="font-size: 24px;">R$ 0,00</span>
+            <span class="stat-meta">Salário + Encargos / Custos Extras</span>
+          </div>
+        </div>
+
+        <!-- Layout Split Screen: Tabela + Team Builder -->
+        <div class="people-layout-grid">
+          
+          <!-- Coluna Esquerda: Tabela de Pessoas -->
+          <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0;">
+            <!-- Barra de Ferramentas de Pessoas -->
+            <div class="actions-toolbar" style="gap: 12px;">
+              <div class="search-filter-wrapper" style="max-width: none; flex: 1;">
+                <div style="position: relative; flex: 1; display: flex; align-items: center;">
+                  <input type="text" id="people-search" class="input-search" placeholder="Buscar por Nome, Cargo, Área ou CHA..." style="width: 100%; padding-right: 40px;">
+                  <button id="btn-clear-people-search" class="btn-icon" title="Limpar Busca" style="position: absolute; right: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; display: none; width: 24px; height: 24px; align-items: center; justify-content: center;">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                  </button>
+                </div>
+                <select id="filter-people-status" class="select-filter">
+                  <option value="Ativo">Apenas Ativos</option>
+                  <option value="Inativo">Apenas Inativos</option>
+                  <option value="all">Todos os Status</option>
+                </select>
+              </div>
+              
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <input type="file" id="people-xlsx-file-picker" accept=".xlsx, .xls" style="display: none;">
+                <button id="btn-import-people-xlsx" class="btn" title="Importar Planilha de Funcionários" style="background: rgba(0, 230, 118, 0.1); color: var(--status-completed); border-color: rgba(0, 230, 118, 0.3);">
+                  <i data-lucide="file-spreadsheet"></i> Importar Quadro
+                </button>
+                <button id="btn-new-employee" class="btn btn-primary">
+                  <i data-lucide="user-plus"></i> Novo Colaborador
+                </button>
+              </div>
+            </div>
+
+            <!-- Tabela -->
+            <div class="table-container">
+              <table class="actions-table" id="table-people">
+                <thead>
+                  <tr>
+                    <th style="width: 40px; text-align: center;">
+                      <input type="checkbox" id="check-all-people" style="cursor: pointer; width: 16px; height: 16px;">
+                    </th>
+                    <th>Cadastro / Nome / Status</th>
+                    <th>Cargo / Área</th>
+                    <th style="width: 250px;">CHA (C, H, A)</th>
+                    <th>Salário / Custo</th>
+                    <th style="width: 120px; text-align: right;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="people-list-body">
+                  <!-- Renderizado dinamicamente via JS -->
+                </tbody>
+              </table>
+              
+              <div id="people-empty-state" class="empty-state" style="display: none;">
+                <div class="empty-state-icon"><i data-lucide="users"></i></div>
+                <p>Nenhum colaborador encontrado ou cadastrado.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coluna Direita: Team Builder Panel -->
+          <div id="team-builder-card" class="chart-card" style="position: sticky; top: 24px; min-height: auto; gap: 20px; background: var(--bg-surface); border: 1px solid var(--border-normal);">
+            <div class="chart-card-header" style="border-bottom: 1px solid var(--border-normal); padding-bottom: 12px; margin-bottom: -8px;">
+              <span class="chart-card-title" style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="users" style="color: var(--color-cyan);"></i> Formar Time de Pivot
+              </span>
+              <span id="draft-team-count" class="badge badge-progress" style="font-size: 11px;">0 selecionados</span>
+            </div>
+            
+            <div id="team-builder-empty" style="text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 13px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+              <i data-lucide="user-check" style="width: 32px; height: 32px; opacity: 0.4;"></i>
+              Selecione colaboradores na tabela ao lado para começar a montar o time de pivot.
+            </div>
+
+            <div id="team-builder-content" style="display: none; flex-direction: column; gap: 16px; width: 100%;">
+              <!-- Lista de Integrantes Selecionados -->
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Integrantes</label>
+                <div id="draft-team-members" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow-y: auto; padding: 4px; border: 1px solid var(--border-normal); border-radius: var(--radius-sm); background: rgba(0,0,0,0.15); align-content: flex-start; width: 100%;">
+                  <!-- Pills dos integrantes inseridas dinamicamente -->
+                </div>
+              </div>
+
+              <!-- Competências Acumuladas (CHA Consolidados) -->
+              <div style="display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--border-normal); padding-top: 16px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Força de CHA do Time</label>
+                
+                <div class="cha-consolidation-group" style="display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
+                  <div>
+                    <strong style="color: var(--color-cyan); display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                      Conhecimentos
+                    </strong>
+                    <div id="consolidated-c" style="color: var(--text-main); font-size: 12px; line-height: 1.4; padding-left: 2px;">
+                      <!-- Texto de C consolidado -->
+                    </div>
+                  </div>
+                  <div>
+                    <strong style="color: var(--color-purple); display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                      Habilidades
+                    </strong>
+                    <div id="consolidated-h" style="color: var(--text-main); font-size: 12px; line-height: 1.4; padding-left: 2px;">
+                      <!-- Texto de H consolidado -->
+                    </div>
+                  </div>
+                  <div>
+                    <strong style="color: var(--color-pink); display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                      Atitudes
+                    </strong>
+                    <div id="consolidated-a" style="color: var(--text-main); font-size: 12px; line-height: 1.4; padding-left: 2px;">
+                      <!-- Texto de A consolidado -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resumo Financeiro do Time -->
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-normal); padding-top: 16px; font-size: 13px;">
+                <span style="color: var(--text-muted); font-weight: 500;">Custo Mensal do Time:</span>
+                <span id="draft-team-cost" style="font-weight: 700; color: #fff; font-family: var(--font-display);">R$ 0,00</span>
+              </div>
+
+              <!-- Botão de Ação -->
+              <button id="btn-generate-pivot-action" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px; margin-top: 8px;">
+                <i data-lucide="git-branch"></i> Gerar Ação 5W de Pivot
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
     </main>
 
   </div>
@@ -287,6 +451,7 @@
       <form id="form-action" onsubmit="event.preventDefault();">
         <input type="hidden" id="action-id-field">
         <input type="hidden" id="action-fca-id-field">
+        <input type="hidden" id="action-people-list-field">
         
         <div class="modal-body">
           <!-- Alerta de Vínculo FCA -->
@@ -374,17 +539,16 @@
 
             <!-- CONTAINER DE MOVIMENTAÇÃO DE PESSOAS (EXCLUSIVO PROJETO PESSOAS) -->
             <div id="people-action-container" class="form-grid-full" style="display: none; padding: 0;">
-               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-normal); padding-bottom: 8px;">
-                 <label style="font-weight: 600; font-size: 14px; color: var(--text-main);">Colaboradores Movimentados <span>*</span></label>
-                 <button type="button" id="btn-add-collaborator" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; height: auto;">
-                   <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Adicionar Colaborador
-                 </button>
-               </div>
-               
-               <div id="collaborators-list" style="margin-bottom: 16px;">
-                 <!-- Linhas de colaboradores inseridas dinamicamente via JS -->
-               </div>
-             </div>
+              <div style="margin-bottom: 12px; border-bottom: 1px solid var(--border-normal); padding-bottom: 8px;">
+                <label style="font-weight: 600; font-size: 14px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="users" style="width: 16px; height: 16px; color: var(--color-cyan);"></i> Colaboradores Movimentados
+                </label>
+              </div>
+              
+              <div id="collaborators-list-read-only" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 200px; overflow-y: auto;">
+                <!-- Exibição apenas de leitura dos colaboradores gerados automaticamente -->
+              </div>
+            </div>
 
             <!-- HOW -->
             <div class="form-group form-grid-full">
@@ -518,6 +682,124 @@
     </div>
   </div>
 
+  <!-- ==========================================
+       MODAL DE CADASTRO E EDIÇÃO DE COLABORADOR [NEW]
+       ========================================== -->
+  <div id="modal-employee" class="modal-overlay">
+    <div class="modal-content" style="max-width: 550px;">
+      
+      <div class="modal-header">
+        <h2 id="employee-modal-title">Novo Colaborador</h2>
+        <button id="btn-employee-modal-close" class="btn-icon">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="form-employee" onsubmit="event.preventDefault();">
+        <input type="hidden" id="employee-id-field">
+        
+        <div class="modal-body">
+          <div class="form-grid">
+            
+            <!-- CADASTRO -->
+            <div class="form-group">
+              <label for="field-employee-cadastro">Cadastro (Nº) <span>*</span></label>
+              <input type="text" id="field-employee-cadastro" class="input-control" placeholder="Ex: 180" required>
+            </div>
+
+            <!-- NOME -->
+            <div class="form-group">
+              <label for="field-employee-name">Nome Completo <span>*</span></label>
+              <input type="text" id="field-employee-name" class="input-control" placeholder="Nome do colaborador" required>
+            </div>
+
+            <!-- ADMISSÃO -->
+            <div class="form-group">
+              <label for="field-employee-admission">Data de Admissão <span>*</span></label>
+              <input type="date" id="field-employee-admission" class="input-control" required>
+            </div>
+
+            <!-- STATUS -->
+            <div class="form-group">
+              <label for="field-employee-status">Status <span>*</span></label>
+              <select id="field-employee-status" class="input-control" required>
+                <option value="Ativo">Ativo</option>
+                <option value="Inativo">Inativo</option>
+              </select>
+            </div>
+
+            <!-- CARGO -->
+            <div class="form-group">
+              <label for="field-employee-role">Cargo <span>*</span></label>
+              <input type="text" id="field-employee-role" class="input-control" placeholder="Ex: Analista de Vendas" required>
+            </div>
+
+            <!-- ÁREA -->
+            <div class="form-group">
+              <label for="field-employee-area">Área <span>*</span></label>
+              <input type="text" id="field-employee-area" class="input-control" placeholder="Ex: Comercial" required>
+            </div>
+
+            <!-- SALÁRIO -->
+            <div class="form-group">
+              <label for="field-employee-salary">Salário Base (R$) <span>*</span></label>
+              <input type="number" id="field-employee-salary" class="input-control" min="0" step="0.01" placeholder="Ex: 3500.00" required>
+            </div>
+
+            <!-- CUSTO -->
+            <div class="form-group">
+              <label for="field-employee-cost">Custo Total Mensal (R$) <span>*</span></label>
+              <input type="number" id="field-employee-cost" class="input-control" min="0" step="0.01" placeholder="Ex: 7700.00" required>
+            </div>
+
+            <!-- CHA: CONHECIMENTOS -->
+            <div class="form-group form-grid-full">
+              <label>Conhecimentos (C)</label>
+              <input type="hidden" id="field-employee-c">
+              <div id="c-tags-visual-container" class="tags-visual-editor-container"></div>
+              <div style="display: flex; gap: 8px; margin-top: 6px;">
+                <input type="text" id="c-tag-new-input" class="input-control" style="flex: 1;" placeholder="Digite e clique em + para adicionar">
+                <button type="button" id="btn-add-c-tag" class="btn btn-primary" style="padding: 0 16px; min-height: auto; height: 38px; justify-content: center;">+</button>
+              </div>
+              <div class="tag-suggestions-container" id="c-tag-suggestions"></div>
+            </div>
+
+            <!-- CHA: HABILIDADES -->
+            <div class="form-group form-grid-full">
+              <label>Habilidades (H)</label>
+              <input type="hidden" id="field-employee-h">
+              <div id="h-tags-visual-container" class="tags-visual-editor-container"></div>
+              <div style="display: flex; gap: 8px; margin-top: 6px;">
+                <input type="text" id="h-tag-new-input" class="input-control" style="flex: 1;" placeholder="Digite e clique em + para adicionar">
+                <button type="button" id="btn-add-h-tag" class="btn btn-primary" style="padding: 0 16px; min-height: auto; height: 38px; justify-content: center;">+</button>
+              </div>
+              <div class="tag-suggestions-container" id="h-tag-suggestions"></div>
+            </div>
+
+            <!-- CHA: ATITUDES -->
+            <div class="form-group form-grid-full">
+              <label>Atitudes (A)</label>
+              <input type="hidden" id="field-employee-a">
+              <div id="a-tags-visual-container" class="tags-visual-editor-container"></div>
+              <div style="display: flex; gap: 8px; margin-top: 6px;">
+                <input type="text" id="a-tag-new-input" class="input-control" style="flex: 1;" placeholder="Digite e clique em + para adicionar">
+                <button type="button" id="btn-add-a-tag" class="btn btn-primary" style="padding: 0 16px; min-height: auto; height: 38px; justify-content: center;">+</button>
+              </div>
+              <div class="tag-suggestions-container" id="a-tag-suggestions"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-employee-cancel" class="btn">Cancelar</button>
+          <button type="submit" id="btn-employee-submit" class="btn btn-primary">Salvar Colaborador</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
   <!-- NOTIFICAÇÃO TOAST -->
   <div id="toast" class="toast">
     <i id="toast-icon" data-lucide="info"></i>
@@ -535,7 +817,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- SCRIPTS DA APLICAÇÃO -->
-  <script src="google-drive-db.js"></script>
-  <script src="app.js"></script>
+  <script src="google-drive-db.js?v=2.4"></script>
+  <script src="app.js?v=2.4"></script>
 </body>
 </html>
