@@ -998,6 +998,7 @@ document.addEventListener('DOMContentLoaded', () => {
     actionPeopleListField.value = '';
     collaboratorsListReadOnly.innerHTML = '';
     pjDetailsContainer.style.display = 'none';
+    pjCurrentCost.removeAttribute('data-value');
     fieldPjProposedCost.value = '';
     pjCostDifference.innerText = 'R$ 0,00';
     pjCostDifference.style.color = 'var(--text-muted)';
@@ -1061,6 +1062,7 @@ document.addEventListener('DOMContentLoaded', () => {
           
           pjCurrentSalary.innerText = currentSal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
           pjCurrentCost.innerText = currentCst.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          pjCurrentCost.setAttribute('data-value', currentCst);
           
           fieldPjProposedCost.value = firstCollab.cost || '';
           updatePjDifferenceCalculations(currentCst, firstCollab.cost || 0);
@@ -1199,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const firstCollab = collaborators[0];
       if (firstCollab.action === 'Migrar PJ') {
         const proposedVal = parseFloat(fieldPjProposedCost.value) || 0;
-        const currentCst = firstCollab.currentCost || firstCollab.cost || 0;
+        const currentCst = parseFloat(pjCurrentCost.getAttribute('data-value')) || firstCollab.currentCost || firstCollab.cost || 0;
         
         finalHowMuch = proposedVal;
         finalHasCashImpact = 'Sim';
@@ -2898,6 +2900,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pjDetailsContainer.style.display = 'block';
       pjCurrentSalary.innerText = emp.salary.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       pjCurrentCost.innerText = emp.cost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      pjCurrentCost.setAttribute('data-value', emp.cost);
       fieldPjProposedCost.value = '';
       pjCostDifference.innerText = 'R$ 0,00';
       pjCostDifference.style.color = 'var(--text-muted)';
@@ -3134,13 +3137,14 @@ document.addEventListener('DOMContentLoaded', () => {
     fieldPjProposedCost.addEventListener('input', () => {
       const proposedVal = parseFloat(fieldPjProposedCost.value) || 0;
       
-      let currentCst = 0;
+      const currentCst = parseFloat(pjCurrentCost.getAttribute('data-value')) || 0;
       if (actionPeopleListField.value) {
         try {
           const collabs = JSON.parse(actionPeopleListField.value);
           if (collabs.length === 1) {
-            currentCst = collabs[0].currentCost || collabs[0].cost || 0;
-            
+            if (collabs[0].currentCost === undefined) {
+              collabs[0].currentCost = currentCst;
+            }
             // Updates collaborator cost in JSON
             collabs[0].cost = proposedVal;
             actionPeopleListField.value = JSON.stringify(collabs);
