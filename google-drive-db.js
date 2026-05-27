@@ -415,11 +415,11 @@ class GoogleDriveDB {
    * Escreve os cabeçalhos na primeira linha da planilha de ações (até coluna V).
    */
   static async initializeHeaders() {
-    const range = `${this.sheetName}!A1:V1`;
+    const range = `${this.sheetName}!A1:W1`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${range}?valueInputOption=USER_ENTERED`;
     
     const headers = [
-      ["ID", "What (O que)", "Why (Por que)", "Where (Onde)", "When (Quando)", "Who (Quem)", "How (Como)", "How Much (Quanto)", "Status", "Created At", "Area (Área)", "Evidence (Evidência)", "FcaId", "StatusReason (Motivo)", "HasCashImpact (Impacto no Caixa?)", "CashImpactValue (Valor do Impacto)", "Project (Projeto)", "PeopleAction (Contratação/Redução/Migrar PJ)", "PeopleName (Nome Colaborador)", "PeopleCost (Custo Movimentação)", "PeopleRole (Cargo)", "PeopleList (Lista Colaboradores JSON)"]
+      ["ID", "What (O que)", "Why (Por que)", "Where (Onde)", "When (Quando)", "Who (Quem)", "How (Como)", "How Much (Quanto)", "Status", "Created At", "Area (Área)", "Evidence (Evidência)", "FcaId", "StatusReason (Motivo)", "HasCashImpact (Impacto no Caixa?)", "CashImpactValue (Valor do Impacto)", "Project (Projeto)", "PeopleAction (Contratação/Redução/Migrar PJ)", "PeopleName (Nome Colaborador)", "PeopleCost (Custo Movimentação)", "PeopleRole (Cargo)", "PeopleList (Lista Colaboradores JSON)", "SubActionsList (Lista Sub-Ações JSON)"]
     ];
 
     const response = await fetch(url, {
@@ -442,7 +442,7 @@ class GoogleDriveDB {
       throw new Error("Não conectado ao banco de dados do Drive. Conecte primeiro.");
     }
 
-    const range = `${this.sheetName}!A2:V`;
+    const range = `${this.sheetName}!A2:W`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${range}`;
 
     const response = await fetch(url, {
@@ -480,7 +480,8 @@ class GoogleDriveDB {
       peopleName: row[18] || '',
       peopleCost: parseFloat(row[19]) || 0,
       peopleRole: row[20] || '',
-      peopleList: row[21] || ''
+      peopleList: row[21] || '',
+      subActionsList: row[22] || ''
     }));
   }
 
@@ -494,7 +495,7 @@ class GoogleDriveDB {
     }
 
     // 1. Limpar as linhas anteriores a partir da linha 2
-    const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${this.sheetName}!A2:V:clear`;
+    const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${this.sheetName}!A2:W:clear`;
     const clearResponse = await fetch(clearUrl, {
       method: 'POST',
       headers: this.getHeaders()
@@ -532,11 +533,12 @@ class GoogleDriveDB {
       act.peopleName || '',
       act.peopleCost || 0,
       act.peopleRole || '',
-      act.peopleList || ''
+      act.peopleList || '',
+      act.subActionsList || ''
     ]);
 
     // 3. Grava o novo bloco de dados
-    const updateRange = `${this.sheetName}!A2:V${actions.length + 1}`;
+    const updateRange = `${this.sheetName}!A2:W${actions.length + 1}`;
     const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${updateRange}?valueInputOption=USER_ENTERED`;
 
     const writeResponse = await fetch(updateUrl, {

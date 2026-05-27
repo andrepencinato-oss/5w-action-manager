@@ -179,6 +179,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const consolidatedA = document.getElementById('consolidated-a');
   const draftTeamCost = document.getElementById('draft-team-cost');
 
+  // Sub-Ações / Desdobramentos
+  const btnAddSubAction = document.getElementById('btn-add-sub-action');
+  const subActionsModalList = document.getElementById('sub-actions-modal-list');
+
   // Detalhes extras de transição PJ e custo de demissão [NEW]
   const pjDetailsContainer = document.getElementById('pj-details-container');
   const pjCurrentSalary = document.getElementById('pj-current-salary');
@@ -226,6 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
     initTagEditorListeners();
     initTransitionListeners();
+    initSubActionsListeners();
 
     // 4. Desenha UI Inicial (Vazia por padrão)
     renderActionsTable();
@@ -938,6 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
     reductionDetailsContainer.style.display = 'none';
     fieldDismissalCost.value = '';
     reductionMonthlySavings.innerText = 'R$ 0,00';
+    subActionsModalList.innerHTML = '';
     
     if (actionToEdit) {
       modalTitle.innerText = "Editar Ação 5W2H";
@@ -1017,6 +1023,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (actionToEdit.fcaId) {
         fcaLinkNotice.style.display = 'block';
       }
+
+      // Carrega as sub-ações
+      let subActionsList = [];
+      if (actionToEdit.subActionsList) {
+        try {
+          subActionsList = JSON.parse(actionToEdit.subActionsList);
+        } catch (e) {
+          console.error("Erro parsing subActionsList in openModal:", e);
+        }
+      }
+      subActionsList.forEach(sub => renderSubActionFormItem(sub));
     } else {
       modalTitle.innerText = "Nova Ação 5W2H";
       actionIdField.value = '';
@@ -1148,6 +1165,41 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Coleta as sub-ações
+    const subActionCards = document.querySelectorAll('.sub-action-item-card');
+    const subActions = [];
+    let isSubActionsValid = true;
+    
+    subActionCards.forEach(card => {
+      const what = card.querySelector('.sub-what').value.trim();
+      const who = card.querySelector('.sub-who').value.trim();
+      const status = card.querySelector('.sub-status').value;
+      const startDate = card.querySelector('.sub-start-date').value;
+      const endDate = card.querySelector('.sub-end-date').value;
+      const cashImpact = card.querySelector('.sub-cash-impact').value;
+      const cashValueRaw = card.querySelector('.sub-cash-value').value;
+      const cashValue = cashImpact === 'Sim' ? (parseFloat(cashValueRaw) || 0) : 0;
+      
+      if (!what || !who || !startDate || !endDate) {
+        isSubActionsValid = false;
+      }
+      
+      subActions.push({
+        what,
+        who,
+        status,
+        startDate,
+        endDate,
+        cashImpact,
+        cashValue
+      });
+    });
+    
+    if (!isSubActionsValid) {
+      showToast("Por favor, preencha todos os campos obrigatórios das sub-ações.", "error");
+      return;
+    }
+
     const actionData = {
       id: isEdit ? id : String(Date.now()),
       what: fieldWhat.value.trim(),
@@ -1170,6 +1222,7 @@ document.addEventListener('DOMContentLoaded', () => {
       peopleRole: isPessoasProj ? roles.join(', ') : '',
       peopleCost: isPessoasProj ? totalPeopleCost : 0,
       peopleList: isPessoasProj ? JSON.stringify(collaborators) : '',
+      subActionsList: subActions.length > 0 ? JSON.stringify(subActions) : '',
       createdAt: isEdit ? (actions.find(a => a.id === id)?.createdAt || new Date().toISOString()) : new Date().toISOString()
     };
 
@@ -1387,6 +1440,75 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="action-detail"><strong>Por quê:</strong> ${escapeHtml(act.why)}</span>
           ${act.project ? `<span class="action-detail" style="color: var(--color-cyan); font-weight:600;"><i data-lucide="folder" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Projeto: ${escapeHtml(act.project)}</span>` : ''}
           ${act.fcaId ? `<span class="action-detail" style="color: var(--color-cyan); font-weight:500;"><i data-lucide="link" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i> Vinculado ao FCA #${act.fcaId.slice(-4)}</span>` : ''}
+          ${(() => {
+            let subCollabs = [];
+            if (act.subActionsList) {
+              try {
+                subCollabs = JSON.parse(act.subActionsList);
+              } catch (e) {
+                console.error("Erro parsing subActionsList in render:", e);
+              }
+            }
+
+            if (subCollabs.length === 0) return '';
+            
+            const completedCount = subCollabs.filter(s => s.status === 'Concluído').length;
+            
+            let totalSubCashImpact = 0;
+            subCollabs.forEach(s => {
+              if (s.cashImpact === 'Sim') {
+                totalSubCashImpact += (s.cashValue || 0);
+              }
+            });
+            
+            const formattedSubCash = totalSubCashImpact !== 0 
+              ? ` | Caixa: ${totalSubCashImpact.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}` 
+              : '';
+              
+            let subActionsHtml = `
+              <div style="margin-top: 8px;">
+                <button onclick="window.toggleSubActionsCollapse('${act.id}', event)" class="sub-actions-toggle-btn">
+                  <i data-lucide="git-branch" style="width:11px; height:11px;"></i> Sub-Ações (${completedCount}/${subCollabs.length} Concluídas${formattedSubCash})
+                </button>
+                <div id="sub-actions-collapse-${act.id}" class="sub-actions-collapse-container" style="display:none; margin-top:8px; border-left: 2px solid var(--color-cyan); padding-left: 8px; margin-left: 6px;">
+            `;
+            
+            subCollabs.forEach(sub => {
+              let subStatusClass = 'badge-pending';
+              if (sub.status === 'Iniciado') subStatusClass = 'badge-progress';
+              else if (sub.status === 'Concluído') subStatusClass = 'badge-completed';
+              else if (sub.status === 'Atrasado') subStatusClass = 'badge-delayed';
+              else if (sub.status === 'Cancelado') subStatusClass = 'badge-cancelled';
+              else if (sub.status === 'Parado') subStatusClass = 'badge-stopped';
+              
+              const formattedStart = sub.startDate ? sub.startDate.split('-').reverse().join('/') : '';
+              const formattedEnd = sub.endDate ? sub.endDate.split('-').reverse().join('/') : '';
+              const dateRange = formattedStart && formattedEnd ? `${formattedStart} a ${formattedEnd}` : (formattedEnd ? `Prazo: ${formattedEnd}` : '');
+              
+              const formattedSubImpact = sub.cashImpact === 'Sim' && sub.cashValue 
+                ? ` | Caixa: ${(parseFloat(sub.cashValue) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}` 
+                : '';
+                
+              subActionsHtml += `
+                <div style="font-size: 11px; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 4px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <span style="font-weight: 500; color: var(--text-main);">${escapeHtml(sub.what)}</span>
+                    <span class="badge ${subStatusClass}" style="font-size: 9px; padding: 1px 4px; border: none;">${sub.status}</span>
+                  </div>
+                  <div style="color: var(--text-muted); font-size: 10px; margin-top: 2px; display: flex; justify-content: space-between;">
+                    <span>Resp: <strong>${escapeHtml(sub.who)}</strong>${formattedSubImpact}</span>
+                    <span>${dateRange}</span>
+                  </div>
+                </div>
+              `;
+            });
+            
+            subActionsHtml += `
+                </div>
+              </div>
+            `;
+            return subActionsHtml;
+          })()}
         </td>
         <td>
           ${whoContainer}
@@ -3075,6 +3197,121 @@ document.addEventListener('DOMContentLoaded', () => {
       fieldHowMuch.value = dismissalCost > 0 ? dismissalCost : '';
     });
   }
+
+  let subActionCounter = 0;
+
+  function renderSubActionFormItem(sub = null) {
+    const index = subActionCounter++;
+    
+    const card = document.createElement('div');
+    card.className = 'sub-action-item-card';
+    card.setAttribute('data-index', index);
+    
+    const whatVal = sub ? sub.what : '';
+    const whoVal = sub ? sub.who : '';
+    const statusVal = sub ? sub.status : 'Não Iniciado';
+    const startDateVal = sub ? sub.startDate : '';
+    const endDateVal = sub ? sub.endDate : '';
+    const cashImpactVal = sub ? sub.cashImpact : 'Não';
+    const cashValueVal = sub ? sub.cashValue : '';
+    
+    const cashDisplay = cashImpactVal === 'Sim' ? 'block' : 'none';
+    
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 11px; font-weight: 600; color: var(--color-cyan); text-transform: uppercase; letter-spacing: 0.5px;">Sub-Ação</span>
+        <button type="button" class="btn-icon delete btn-remove-sub-action" style="background: none; border: none; cursor: pointer; color: var(--status-delayed); display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;" title="Remover Sub-Ação">
+          <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+        </button>
+      </div>
+      <div class="form-grid" style="gap: 8px;">
+        <div class="form-group form-grid-full">
+          <label style="font-size: 10px; margin-bottom: 2px; color: var(--text-muted);">O que será feito? (What)</label>
+          <input type="text" class="input-control sub-what" placeholder="Descrição da sub-ação" value="${escapeHtml(whatVal)}" required style="font-size: 12px; height: 32px; min-height: 32px;">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 10px; margin-bottom: 2px; color: var(--text-muted);">Quem (Who)</label>
+          <input type="text" class="input-control sub-who" placeholder="Responsável" value="${escapeHtml(whoVal)}" required style="font-size: 12px; height: 32px; min-height: 32px;">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 10px; margin-bottom: 2px; color: var(--text-muted);">Status</label>
+          <select class="input-control sub-status" style="font-size: 12px; height: 32px; min-height: 32px;">
+            <option value="Não Iniciado" ${statusVal === 'Não Iniciado' ? 'selected' : ''}>Não Iniciado</option>
+            <option value="Iniciado" ${statusVal === 'Iniciado' ? 'selected' : ''}>Iniciado</option>
+            <option value="Concluído" ${statusVal === 'Concluído' ? 'selected' : ''}>Concluído</option>
+            <option value="Atrasado" ${statusVal === 'Atrasado' ? 'selected' : ''}>Atrasado</option>
+            <option value="Cancelado" ${statusVal === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+            <option value="Parado" ${statusVal === 'Parado' ? 'selected' : ''}>Parado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-size: 10px; margin-bottom: 2px; color: var(--text-muted);">Data Início</label>
+          <input type="date" class="input-control sub-start-date" value="${startDateVal}" required style="font-size: 12px; height: 32px; min-height: 32px;">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 10px; margin-bottom: 2px; color: var(--text-muted);">Prazo / Fim (When)</label>
+          <input type="date" class="input-control sub-end-date" value="${endDateVal}" required style="font-size: 12px; height: 32px; min-height: 32px;">
+        </div>
+        <div class="form-group">
+          <label style="font-size: 10px; margin-bottom: 2px; color: var(--text-muted);">Impacto no Caixa?</label>
+          <select class="input-control sub-cash-impact" style="font-size: 12px; height: 32px; min-height: 32px;">
+            <option value="Não" ${cashImpactVal === 'Não' ? 'selected' : ''}>Não</option>
+            <option value="Sim" ${cashImpactVal === 'Sim' ? 'selected' : ''}>Sim</option>
+          </select>
+        </div>
+        <div class="form-group sub-cash-value-group" style="display: ${cashDisplay};">
+          <label style="font-size: 10px; margin-bottom: 2px; color: var(--text-muted);">Valor do Impacto</label>
+          <input type="number" class="input-control sub-cash-value" placeholder="R$ (ex: -1500 ou 500)" value="${cashValueVal}" style="font-size: 12px; height: 32px; min-height: 32px;">
+        </div>
+      </div>
+    `;
+    
+    // Wire delete button
+    card.querySelector('.btn-remove-sub-action').addEventListener('click', () => {
+      card.remove();
+    });
+    
+    // Wire toggle cash value input display
+    const cashImpactSelect = card.querySelector('.sub-cash-impact');
+    const cashValueGroup = card.querySelector('.sub-cash-value-group');
+    const cashValueInput = card.querySelector('.sub-cash-value');
+    
+    cashImpactSelect.addEventListener('change', () => {
+      if (cashImpactSelect.value === 'Sim') {
+        cashValueGroup.style.display = 'block';
+        cashValueInput.setAttribute('required', 'required');
+      } else {
+        cashValueGroup.style.display = 'none';
+        cashValueInput.removeAttribute('required');
+        cashValueInput.value = '';
+      }
+    });
+    
+    subActionsModalList.appendChild(card);
+    lucide.createIcons();
+  }
+
+  function initSubActionsListeners() {
+    btnAddSubAction.addEventListener('click', () => {
+      renderSubActionFormItem();
+    });
+  }
+
+  window.toggleSubActionsCollapse = function(actId, event) {
+    if (event) event.stopPropagation();
+    const container = document.getElementById(`sub-actions-collapse-${actId}`);
+    if (container) {
+      const isCollapsed = container.style.display === 'none';
+      container.style.display = isCollapsed ? 'block' : 'none';
+      
+      const btn = event.currentTarget;
+      if (isCollapsed) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
+  };
 
   // =========================================================================
   // EXECUTA A INICIALIZAÇÃO
