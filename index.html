@@ -6,7 +6,7 @@
   <title>5W2H Action Monitor | Gestão Inteligente</title>
   
   <!-- CSS Principal -->
-  <link rel="stylesheet" href="style.css?v=2.4">
+  <link rel="stylesheet" href="style.css?v=2.5">
 </head>
 <body>
 
@@ -548,6 +548,44 @@
               <div id="collaborators-list-read-only" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 200px; overflow-y: auto;">
                 <!-- Exibição apenas de leitura dos colaboradores gerados automaticamente -->
               </div>
+
+              <!-- Detalhes Extras para Migração PJ [NEW] -->
+              <div id="pj-details-container" style="display: none; flex-direction: column; gap: 16px; background: rgba(0,0,0,0.15); border: 1px solid var(--border-normal); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+                <div style="font-weight: 600; font-size: 13px; color: var(--color-cyan); margin-bottom: -4px;">Detalhes de Transição CLT para PJ</div>
+                <div class="form-grid" style="gap: 12px;">
+                  <div class="form-group">
+                    <label>Salário CLT Atual</label>
+                    <div id="pj-current-salary" class="input-control" style="background: rgba(0,0,0,0.25); color: var(--text-muted); font-weight: 500;">R$ 0,00</div>
+                  </div>
+                  <div class="form-group">
+                    <label>Custo CLT Atual</label>
+                    <div id="pj-current-cost" class="input-control" style="background: rgba(0,0,0,0.25); color: var(--text-muted); font-weight: 500;">R$ 0,00</div>
+                  </div>
+                  <div class="form-group">
+                    <label for="field-pj-proposed-cost">Custo Proposto (PJ) <span style="color:var(--color-cyan);">*</span></label>
+                    <input type="number" id="field-pj-proposed-cost" class="input-control" min="0" step="0.01" placeholder="Ex: 5000.00">
+                  </div>
+                  <div class="form-group" style="display: flex; flex-direction: column; justify-content: center;">
+                    <label>Impacto Mensal Estimado</label>
+                    <div id="pj-cost-difference" style="font-size: 14px; font-weight: 700; margin-top: 8px; color: var(--text-muted);">R$ 0,00</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Detalhes Extras para Demissão/Redução [NEW] -->
+              <div id="reduction-details-container" style="display: none; flex-direction: column; gap: 16px; background: rgba(0,0,0,0.15); border: 1px solid var(--border-normal); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+                <div style="font-weight: 600; font-size: 13px; color: var(--status-delayed); margin-bottom: -4px;">Detalhes do Desligamento</div>
+                <div class="form-grid" style="gap: 12px;">
+                  <div class="form-group">
+                    <label for="field-dismissal-cost">Valor da Demissão Calculada <span style="color:var(--status-delayed);">*</span></label>
+                    <input type="number" id="field-dismissal-cost" class="input-control" min="0" step="0.01" placeholder="Ex: 15000.00">
+                  </div>
+                  <div class="form-group" style="display: flex; flex-direction: column; justify-content: center;">
+                    <label>Economia Mensal Gerada</label>
+                    <div id="reduction-monthly-savings" style="font-size: 14px; font-weight: 700; color: var(--status-completed); margin-top: 8px;">R$ 0,00</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- HOW -->
@@ -817,7 +855,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- SCRIPTS DA APLICAÇÃO -->
-  <script src="google-drive-db.js?v=2.4"></script>
-  <script src="app.js?v=2.4"></script>
+  <script src="google-drive-db.js?v=2.5"></script>
+  <script src="app.js?v=2.5"></script>
 </body>
 </html>

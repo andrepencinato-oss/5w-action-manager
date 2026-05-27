@@ -178,6 +178,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const consolidatedH = document.getElementById('consolidated-h');
   const consolidatedA = document.getElementById('consolidated-a');
   const draftTeamCost = document.getElementById('draft-team-cost');
+
+  // Detalhes extras de transição PJ e custo de demissão [NEW]
+  const pjDetailsContainer = document.getElementById('pj-details-container');
+  const pjCurrentSalary = document.getElementById('pj-current-salary');
+  const pjCurrentCost = document.getElementById('pj-current-cost');
+  const fieldPjProposedCost = document.getElementById('field-pj-proposed-cost');
+  const pjCostDifference = document.getElementById('pj-cost-difference');
+
+  const reductionDetailsContainer = document.getElementById('reduction-details-container');
+  const fieldDismissalCost = document.getElementById('field-dismissal-cost');
+  const reductionMonthlySavings = document.getElementById('reduction-monthly-savings');
   const btnGeneratePivotAction = document.getElementById('btn-generate-pivot-action');
 
   // Stats Elements
@@ -204,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Registra os ícones do Lucide
     lucide.createIcons();
     initTagEditorListeners();
+    initTransitionListeners();
 
     // 4. Desenha UI Inicial
     renderActionsTable();
@@ -982,9 +994,16 @@ document.addEventListener('DOMContentLoaded', () => {
     fcaLinkNotice.style.display = 'none';
     actionFcaIdField.value = '';
     
-    // Limpa a lista de colaboradores
+    // Limpa a lista de colaboradores e containers de detalhes extras
     actionPeopleListField.value = '';
     collaboratorsListReadOnly.innerHTML = '';
+    pjDetailsContainer.style.display = 'none';
+    fieldPjProposedCost.value = '';
+    pjCostDifference.innerText = 'R$ 0,00';
+    pjCostDifference.style.color = 'var(--text-muted)';
+    reductionDetailsContainer.style.display = 'none';
+    fieldDismissalCost.value = '';
+    reductionMonthlySavings.innerText = 'R$ 0,00';
     
     if (actionToEdit) {
       modalTitle.innerText = "Editar Ação 5W2H";
@@ -1030,6 +1049,31 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       renderCollaboratorsReadOnly(collabList);
+      
+      const firstCollab = collabList[0];
+      if (firstCollab && actionToEdit.project === 'Pessoas') {
+        if (firstCollab.action === 'Migrar PJ') {
+          pjDetailsContainer.style.display = 'block';
+          
+          const emp = headcount.find(e => e.cadastro === firstCollab.cadastro || e.name === firstCollab.name);
+          const currentSal = emp ? emp.salary : (firstCollab.salary || 0);
+          const currentCst = emp ? emp.cost : (firstCollab.currentCost || firstCollab.cost || 0);
+          
+          pjCurrentSalary.innerText = currentSal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          pjCurrentCost.innerText = currentCst.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          
+          fieldPjProposedCost.value = firstCollab.cost || '';
+          updatePjDifferenceCalculations(currentCst, firstCollab.cost || 0);
+        } else if (firstCollab.action === 'Redução') {
+          reductionDetailsContainer.style.display = 'block';
+          
+          const emp = headcount.find(e => e.cadastro === firstCollab.cadastro || e.name === firstCollab.name);
+          const currentCst = emp ? emp.cost : (firstCollab.cost || 0);
+          reductionMonthlySavings.innerText = currentCst.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          
+          fieldDismissalCost.value = actionToEdit.howMuch || '';
+        }
+      }
       
       handleStatusChange();
       handleCashImpactChange();
@@ -1120,12 +1164,52 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Validação de inputs de detalhes extras do projeto Pessoas
+    if (isPessoasProj && collaborators.length === 1) {
+      const firstCollab = collaborators[0];
+      if (firstCollab.action === 'Migrar PJ') {
+        const proposedVal = parseFloat(fieldPjProposedCost.value);
+        if (isNaN(proposedVal) || proposedVal < 0) {
+          showToast("Por favor, insira o Custo Proposto (PJ) válido.", "error");
+          return;
+        }
+      } else if (firstCollab.action === 'Redução') {
+        const dismissalVal = parseFloat(fieldDismissalCost.value);
+        if (isNaN(dismissalVal) || dismissalVal < 0) {
+          showToast("Por favor, insira o Custo de Demissão Calculada válido.", "error");
+          return;
+        }
+      }
+    }
+
     let finalPeopleAction = 'Não';
     if (isPessoasProj && collaborators.length > 0) {
       if (actionsTypes.size === 1) {
         finalPeopleAction = Array.from(actionsTypes)[0];
       } else {
         finalPeopleAction = 'Vários';
+      }
+    }
+
+    let finalHowMuch = totalPeopleCost;
+    let finalHasCashImpact = fieldHasCashImpact.value;
+    let finalCashImpactVal = fieldHasCashImpact.value === 'Sim' ? (parseFloat(fieldCashImpactValue.value) || 0) : 0;
+
+    if (isPessoasProj && collaborators.length === 1) {
+      const firstCollab = collaborators[0];
+      if (firstCollab.action === 'Migrar PJ') {
+        const proposedVal = parseFloat(fieldPjProposedCost.value) || 0;
+        const currentCst = firstCollab.currentCost || firstCollab.cost || 0;
+        
+        finalHowMuch = proposedVal;
+        finalHasCashImpact = 'Sim';
+        finalCashImpactVal = currentCst - proposedVal; // Economia = positivo, Aumento = negativo
+      } else if (firstCollab.action === 'Redução') {
+        const dismissalVal = parseFloat(fieldDismissalCost.value) || 0;
+        
+        finalHowMuch = dismissalVal;
+        finalHasCashImpact = 'Sim';
+        finalCashImpactVal = -dismissalVal; // Saída de caixa = impacto negativo
       }
     }
 
@@ -1138,13 +1222,13 @@ document.addEventListener('DOMContentLoaded', () => {
       area: isPessoasProj ? [...new Set(areas)].join(', ') : fieldArea.value.trim(),
       when: fieldWhen.value,
       how: fieldHow.value.trim(),
-      howMuch: isPessoasProj ? totalPeopleCost : (parseFloat(fieldHowMuch.value) || 0),
+      howMuch: isPessoasProj ? finalHowMuch : (parseFloat(fieldHowMuch.value) || 0),
       status: fieldStatus.value,
       evidence: fieldEvidence.value.trim(),
       fcaId: fcaId,
       statusReason: (fieldStatus.value === 'Cancelado' || fieldStatus.value === 'Parado') ? fieldStatusReason.value.trim() : '',
-      hasCashImpact: fieldHasCashImpact.value,
-      cashImpactValue: fieldHasCashImpact.value === 'Sim' ? (parseFloat(fieldCashImpactValue.value) || 0) : 0,
+      hasCashImpact: finalHasCashImpact,
+      cashImpactValue: finalCashImpactVal,
       project: finalProject,
       peopleAction: finalPeopleAction,
       peopleName: isPessoasProj ? names.join(', ') : '',
@@ -2795,7 +2879,9 @@ document.addEventListener('DOMContentLoaded', () => {
       role: emp.role,
       area: emp.area,
       cost: emp.cost,
-      cadastro: emp.cadastro
+      cadastro: emp.cadastro,
+      salary: emp.salary,
+      currentCost: emp.cost
     };
     
     openModal(); // Abre modal limpo
@@ -2806,6 +2892,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     actionPeopleListField.value = JSON.stringify([collaborator]);
     renderCollaboratorsReadOnly([collaborator]);
+    
+    // Inicializa containers específicos de transição PJ e Demissão
+    if (actionType === 'Migrar PJ') {
+      pjDetailsContainer.style.display = 'block';
+      pjCurrentSalary.innerText = emp.salary.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      pjCurrentCost.innerText = emp.cost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      fieldPjProposedCost.value = '';
+      pjCostDifference.innerText = 'R$ 0,00';
+      pjCostDifference.style.color = 'var(--text-muted)';
+    } else if (actionType === 'Redução') {
+      reductionDetailsContainer.style.display = 'block';
+      reductionMonthlySavings.innerText = emp.cost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      fieldDismissalCost.value = '';
+    }
     
     let whatVal = '';
     let whyVal = '';
@@ -2840,7 +2940,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fieldWhere.value = emp.area;
     fieldArea.value = emp.area;
     fieldHow.value = howVal;
-    fieldHowMuch.value = emp.cost;
+    
+    if (actionType === 'Migrar PJ' || actionType === 'Redução') {
+      fieldHowMuch.value = '';
+    } else {
+      fieldHowMuch.value = emp.cost;
+    }
     
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -3006,6 +3111,55 @@ document.addEventListener('DOMContentLoaded', () => {
       updateHeadcountStats();
       syncHeadcountWithDrive();
     }
+  }
+
+  function updatePjDifferenceCalculations(currentCst, proposedVal) {
+    const diff = currentCst - proposedVal;
+    const absDiff = Math.abs(diff);
+    const formattedDiff = absDiff.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    if (diff > 0) {
+      pjCostDifference.innerText = `Economia de ${formattedDiff}/mês`;
+      pjCostDifference.style.color = 'var(--status-completed)';
+    } else if (diff < 0) {
+      pjCostDifference.innerText = `Aumento de ${formattedDiff}/mês`;
+      pjCostDifference.style.color = '#ff9800';
+    } else {
+      pjCostDifference.innerText = 'Sem alteração de custo';
+      pjCostDifference.style.color = 'var(--text-muted)';
+    }
+  }
+
+  function initTransitionListeners() {
+    fieldPjProposedCost.addEventListener('input', () => {
+      const proposedVal = parseFloat(fieldPjProposedCost.value) || 0;
+      
+      let currentCst = 0;
+      if (actionPeopleListField.value) {
+        try {
+          const collabs = JSON.parse(actionPeopleListField.value);
+          if (collabs.length === 1) {
+            currentCst = collabs[0].currentCost || collabs[0].cost || 0;
+            
+            // Updates collaborator cost in JSON
+            collabs[0].cost = proposedVal;
+            actionPeopleListField.value = JSON.stringify(collabs);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      
+      updatePjDifferenceCalculations(currentCst, proposedVal);
+      
+      // Update Quanto Custa (howMuch) field in action form
+      fieldHowMuch.value = proposedVal > 0 ? proposedVal : '';
+    });
+
+    fieldDismissalCost.addEventListener('input', () => {
+      const dismissalCost = parseFloat(fieldDismissalCost.value) || 0;
+      fieldHowMuch.value = dismissalCost > 0 ? dismissalCost : '';
+    });
   }
 
   // =========================================================================
