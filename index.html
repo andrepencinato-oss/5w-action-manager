@@ -6,7 +6,18 @@
   <title>5W2H Action Monitor | Gestão Inteligente</title>
   
   <!-- CSS Principal -->
-  <link rel="stylesheet" href="style.css?v=3.3">
+  <link rel="stylesheet" href="style.css?v=3.4">
+  <style>
+    /* Forçar legibilidade do título e estatísticas ignorando cache antigo do style.css */
+    .app-title h1 {
+      background: linear-gradient(to right, var(--text-main), var(--text-muted)) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+    }
+    .stat-value {
+      color: var(--text-main) !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -863,7 +874,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- SCRIPTS DA APLICAÇÃO -->
-  <script src="google-drive-db.js?v=3.3"></script>
-  <script src="app.js?v=3.3"></script>
+  <script src="google-drive-db.js?v=3.4"></script>
+  <script src="app.js?v=3.4"></script>
 </body>
 </html>
