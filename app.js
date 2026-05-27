@@ -3200,6 +3200,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let subActionCounter = 0;
 
+  function updateSubActionsNumbering() {
+    const cards = subActionsModalList.querySelectorAll('.sub-action-item-card');
+    cards.forEach((card, i) => {
+      const titleSpan = card.querySelector('.sub-action-title');
+      if (titleSpan) {
+        titleSpan.textContent = `Sub-Ação ${i + 1}`;
+      }
+    });
+  }
+
   function renderSubActionFormItem(sub = null) {
     const index = subActionCounter++;
     
@@ -3208,7 +3218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     card.setAttribute('data-index', index);
     
     const whatVal = sub ? sub.what : '';
-    const whoVal = sub ? sub.who : '';
+    const whoVal = sub ? sub.who : (fieldWho ? fieldWho.value : '');
     const statusVal = sub ? sub.status : 'Não Iniciado';
     const startDateVal = sub ? sub.startDate : '';
     const endDateVal = sub ? sub.endDate : '';
@@ -3219,7 +3229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 11px; font-weight: 600; color: var(--color-cyan); text-transform: uppercase; letter-spacing: 0.5px;">Sub-Ação</span>
+        <span class="sub-action-title" style="font-size: 11px; font-weight: 600; color: var(--color-cyan); text-transform: uppercase; letter-spacing: 0.5px;">Sub-Ação</span>
         <button type="button" class="btn-icon delete btn-remove-sub-action" style="background: none; border: none; cursor: pointer; color: var(--status-delayed); display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;" title="Remover Sub-Ação">
           <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
         </button>
@@ -3269,6 +3279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wire delete button
     card.querySelector('.btn-remove-sub-action').addEventListener('click', () => {
       card.remove();
+      updateSubActionsNumbering();
     });
     
     // Wire toggle cash value input display
@@ -3288,6 +3299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     subActionsModalList.appendChild(card);
+    updateSubActionsNumbering();
     lucide.createIcons();
   }
 
