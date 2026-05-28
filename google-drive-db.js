@@ -10,7 +10,7 @@
 // =========================================================================
 const CLIENT_ID = '947815600895-61vcmpsp59hp57vdsrfgk1spsndha9l3.apps.googleusercontent.com';
 const TARGET_FOLDER_ID = '18ri71QSAQQccc-ACHB7dAfs-e3UApQJ-';
-const SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
+const SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 // =========================================================================
 
 class GoogleDriveDB {
