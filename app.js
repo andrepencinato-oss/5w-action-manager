@@ -1688,7 +1688,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (error) {
       console.error('Erro ao construir resumo:', error);
-      summaryCard.innerHTML = `<p style="color: var(--status-delayed);">Ocorreu um erro ao gerar o resumo inteligente. Verifique sua conexão ou a chave de API.</p>`;
+      const fallbackHtml = buildExecutiveSummaryHtml(acaoData);
+      summaryCard.innerHTML = `
+        <div style="color: var(--status-delayed); margin-bottom: 16px; font-size: 13px; font-weight: 500;">
+          ⚠️ Ocorreu um erro ao gerar o resumo com Inteligência Artificial (verifique a chave de API ou conexão). Exibindo dados locais abaixo:
+        </div>
+        ${fallbackHtml}
+      `;
     }
   }
 
@@ -1791,18 +1797,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     modalSummary.dataset.currentActionId = act.id;
-    // Renderiza o resumo básico gerado localmente e abre o modal
-    const summaryHtml = buildExecutiveSummaryHtml(act);
-    document.getElementById('summary-content-card').innerHTML = summaryHtml;
     modalSummary.classList.add('active');
 
-    // Aciona a geração avançada por Gemini (se a chave estiver preenchida)
-    try {
-      // chama de forma assíncrona sem bloquear a abertura do modal
-      gerarResumoExecutivoProfissional(act);
-    } catch (err) {
-      console.warn('Falha ao iniciar geração por Gemini:', err);
-    }
+    // Aciona a geração do Resumo Executivo com Gemini (que cuidará de colocar o loader e fazer o fallback em caso de erro)
+    gerarResumoExecutivoProfissional(act);
   }
 
   window.showExecutiveSummary = showExecutiveSummary;
