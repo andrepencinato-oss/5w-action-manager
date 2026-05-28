@@ -1638,25 +1638,36 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     const prompt = `
-    Você é um Diretor Executivo (C-Level) e especialista em comunicação corporativa. 
-    Transforme os dados brutos de formulário da seguinte ação 5W2H em um relatório de Resumo Executivo fluido, elegante e extremamente profissional para apresentação à diretoria e CEO.
+    Você é um especialista em Gestão de Projetos (PMO) e Diretor Executivo (C-Level).
+    Analise os dados brutos da seguinte ação 5W2H e crie um "Status Report Executivo" profissional no formato de Project Charter/PMO.
     
-    Regras Críticas:
-    1. Proibido usar formato de lista seca ou repetir perguntas diretas como "O que:", "Por que:", "Quem:".
-    2. Organize o texto em três seções corporativas formais usando títulos em Markdown (## ou ###): '1. Alinhamento Estratégico e Objetivo', '2. Governança e Cronograma Executivo' e '3. Análise de Impacto Financeiro e Status'.
-    3. Mantenha todos os dados originais intactos (nomes, datas, ID, valores).
-    4. Articule os tópicos como parágrafos narrativos contínuos de alto nível.
-    
-    Dados Brutos da Ação:
-    - ID do Projeto: ${acaoData.id || 'Não informado'}
-    - O Que fazer (What): ${acaoData.what || 'Não informado'}
-    - Por Que fazer (Why): ${acaoData.why || 'Não informado'}
-    - Quem fará (Who): ${acaoData.who || 'Não informado'}
-    - Onde será feito (Where): ${acaoData.where || 'Não informado'}
-    - Quando (When): ${acaoData.when || 'Não informado'}
-    - Quanto custa (How Much): R$ ${acaoData.howMuch || '0'}
-    - Status Atual: ${acaoData.status || 'Não iniciado'}
-    - Impacto no Caixa: ${acaoData.hasCashImpact || 'Não'}
+    Regra Crítica: Você DEVE retornar a resposta estruturada seguindo EXATAMENTE o template em Markdown abaixo (com as mesmas seções, marcadores e tabela). Substitua os colchetes com os dados analisados e expandidos profissionalmente:
+
+    ## [${acaoData.project || 'Sem Projeto'} - ID: ${acaoData.id || 'N/A'}] Status Report Executivo
+    ---
+    ### 📋 Escopo & Alinhamento Estratégico
+    - **O Que (What)**: [Descrição direta da ação expandida profissionalmente, baseada em: ${acaoData.what || 'Não informado'}]
+    - **Justificativa (Why)**: [Motivo comercial/operacional de alto nível, baseado em: ${acaoData.why || 'Não informado'}]
+    - **Área Impactada (Where)**: [Departamento / Setor / Local, baseado em: ${acaoData.where || 'Não informado'} (Área: ${acaoData.area || 'Não informada'})]
+
+    ### 👥 Matriz de Responsabilidade & Cronograma
+    - **Responsáveis (Who)**: [Nomes dos envolvidos, baseados em: ${acaoData.who || 'Não informado'}]
+    - **Prazo Final (When)**: [Data formatada no padrão brasileiro DD/MM/AAAA, baseada em: ${acaoData.when || 'Não informado'}]
+    - **Status Atual**: [Status destacado com indicador de status, baseado em: ${acaoData.status || 'Não iniciado'}]
+
+    ### 💰 Viabilidade Financeira & Recursos (KPIs)
+    | Indicador Financeiro | Detalhe / Valor |
+    | :--- | :--- |
+    | **Orçamento Requerido (How Much)** | R$ ${acaoData.howMuch || '0'} |
+    | **Impacto Direto no Caixa** | [Indique se sim ou não, baseado em: ${acaoData.hasCashImpact || 'Não'}. Se sim, mencione o valor de R$ ${acaoData.cashImpactValue || '0'}] |
+    | **Transição de Pessoas (Headcount)** | [Indique se sim ou não, e o tipo de movimentação se houver, baseando-se no projeto de Pessoas: ${acaoData.project === 'Pessoas' ? 'Sim' : 'Não'}] |
+
+    - **Plano de Execução (How)**: [Passo a passo ou método da entrega de forma refinada, baseado em: ${acaoData.how || 'Não informado'}]
+    ---
+
+    Instruções adicionais:
+    1. Articule as informações nos colchetes como textos corporativos de alto nível (PMO/Project Charter), sem inventar dados e mantendo os originais intactos.
+    2. Responda APENAS o Markdown final estruturado seguindo o modelo acima. Não adicione textos adicionais antes ou depois do relatório.
     `;
 
     try {
