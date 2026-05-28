@@ -148,9 +148,8 @@ class GoogleDriveDB {
 
       console.log(`Buscando banco de dados 5W2H na pasta: ${folderId}`);
 
-      // 1. Procurar pela planilha existente na pasta corporativa
-      // A query verifica o nome do arquivo, se ele não está no lixo, se é planilha e se está contido na pasta parents
-      const query = encodeURIComponent(`name = '5W2H_Action_Plan_Database' and '${folderId}' in parents and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`);
+      // 1. Procurar por planilhas existentes dentro da pasta corporativa (busca ampla por mimeType)
+      const query = encodeURIComponent(`'${folderId}' in parents and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`);
       const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)`;
       
       let response;
@@ -160,16 +159,17 @@ class GoogleDriveDB {
           headers: this.getHeaders()
         });
       } catch (fetchErr) {
-        // Erro de rede ou CORS
+        console.error("Erro de conexão ao Google Drive:", fetchErr);
         throw new Error("Não foi possível conectar aos servidores do Google. Verifique sua conexão de rede.");
       }
 
-      // Tratamento específico de erros HTTP (ex: Bloqueios de Administrador da TI GSuite / 403 Forbidden)
+      // Tratamento de erro detalhado com alerta na tela para auditoria
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error?.message || response.statusText;
         
-        console.error("Erro da API do Google Drive:", errorData);
+        console.error("Erro retornado pela API do Google Drive:", errorData);
+        alert(`Erro da API do Google Drive (Status ${response.status}):\n${errorMessage}`);
 
         if (response.status === 403 || response.status === 401) {
           throw new Error("Acesso Negado: Sua conta não possui permissão de acesso à pasta de dados centralizada do projeto. Solicite acesso ao administrador.");
@@ -181,11 +181,29 @@ class GoogleDriveDB {
       }
 
       const searchResult = await response.json();
+      const filesFound = searchResult.files || [];
       
-      if (searchResult.files && searchResult.files.length > 0) {
-        // Planilha encontrada!
-        this.spreadsheetId = searchResult.files[0].id;
-        console.log(`Planilha existente encontrada! ID: ${this.spreadsheetId}`);
+      console.log(`Auditoria Drive - Arquivos encontrados na pasta (${folderId}):`, filesFound);
+      alert(`Auditoria Drive:\nPlanilhas encontradas na pasta: ${filesFound.length}\nArquivos listados: ${JSON.stringify(filesFound.map(f => f.name))}`);
+
+      let selectedFile = null;
+      if (filesFound.length > 0) {
+        // Tenta encontrar uma planilha que tenha termos chave de banco de dados (ex: "5W2H", "Database", "Action_Plan")
+        selectedFile = filesFound.find(f => {
+          const nameLower = f.name.toLowerCase();
+          return nameLower.includes('5w2h') || nameLower.includes('database') || nameLower.includes('action_plan') || nameLower.includes('action plan');
+        });
+
+        // Se não encontrar por termos chave, pega a primeira planilha disponível na pasta
+        if (!selectedFile) {
+          selectedFile = filesFound[0];
+          console.warn(`Nenhuma planilha contendo '5W2H' ou 'Database' no nome foi encontrada. Usando o arquivo: ${selectedFile.name}`);
+        }
+      }
+
+      if (selectedFile) {
+        this.spreadsheetId = selectedFile.id;
+        console.log(`Planilha conectada: ${selectedFile.name} (ID: ${this.spreadsheetId})`);
         await this.detectSheetName();
         await this.ensureFcaSheetExists();
         await this.ensureHeadcountSheetExists();
