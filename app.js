@@ -183,6 +183,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnAddSubAction = document.getElementById('btn-add-sub-action');
   const subActionsModalList = document.getElementById('sub-actions-modal-list');
 
+  // Resumo Executivo [NEW]
+  const modalSummary = document.getElementById('modal-summary');
+  const btnSummaryModalClose = document.getElementById('btn-summary-modal-close');
+  const btnSummaryClose = document.getElementById('btn-summary-close');
+  const btnSummaryDownload = document.getElementById('btn-summary-download');
+  const btnCopySummary = document.getElementById('btn-copy-summary');
+
   // Detalhes extras de transição PJ e custo de demissão [NEW]
   const pjDetailsContainer = document.getElementById('pj-details-container');
   const pjCurrentSalary = document.getElementById('pj-current-salary');
@@ -1532,6 +1539,9 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>
           <div class="table-actions">
+            <button onclick="window.showExecutiveSummary('${act.id}')" class="btn-icon summary" title="Resumo Executivo" style="color: var(--color-cyan);">
+              <i data-lucide="file-text"></i>
+            </button>
             <button onclick="editAction('${act.id}')" class="btn-icon edit" title="Editar">
               <i data-lucide="edit-3"></i>
             </button>
@@ -1551,6 +1561,186 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================================
   // ATUALIZAÇÃO E DESENHO DO DASHBOARD (ESTATÍSTICAS E GRÁFICOS)
   // =========================================================================
+  function downloadExecutiveSummaryPdf() {
+    const actionId = modalSummary.dataset.currentActionId;
+    const act = actions.find(item => item.id === actionId);
+    if (!act) {
+      showToast('Nenhuma ação válida disponível para gerar o PDF.', 'error');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF) {
+      showToast('Biblioteca jsPDF não está carregada.', 'error');
+      return;
+    }
+
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const lines = buildExecutiveSummaryText(act).split('\n');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    const maxLineWidth = pageWidth - margin * 2;
+    const wrappedLines = doc.splitTextToSize(lines, maxLineWidth);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text(`Resumo Executivo - Ação ${act.id}`, margin, 20);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(wrappedLines, margin, 30);
+    doc.save(`ResumoExecutivo_${act.id}.pdf`);
+  }
+
+  function copyExecutiveSummaryMarkdown() {
+    const actionId = modalSummary.dataset.currentActionId;
+    const act = actions.find(item => item.id === actionId);
+    if (!act) {
+      showToast('Nenhuma ação válida disponível para copiar.', 'error');
+      return;
+    }
+
+    const markdownText = buildExecutiveSummaryMarkdown(act);
+    navigator.clipboard.writeText(markdownText).then(() => {
+      showToast('Resumo executivo copiado para a área de transferência.', 'success');
+    }).catch(() => {
+      showToast('Não foi possível copiar o resumo. Tente novamente.', 'error');
+    });
+  }
+
+  function buildExecutiveSummaryText(act) {
+    const lines = [
+      `Resumo Executivo - Ação ${act.id}`,
+      '',
+      `O que: ${act.what || 'N/A'}`,
+      `Por que: ${act.why || 'N/A'}`,
+      `Onde: ${act.where || 'N/A'}`,
+      `Quando: ${formatDateString(act.when)}`,
+      `Quem: ${act.who || 'N/A'}`,
+      `Como: ${act.how || 'N/A'}`,
+      `Quanto: ${formatCurrency(act.howMuch)}`,
+      `Status: ${act.status || 'N/A'}`,
+      act.statusReason ? `Motivo: ${act.statusReason}` : '',
+      `Impacto no Caixa: ${act.hasCashImpact === 'Sim' ? 'Sim' : 'Não'}`,
+      act.hasCashImpact === 'Sim' ? `Valor do Impacto: ${formatCurrency(act.cashImpactValue)}` : '',
+      act.peopleAction ? `Movimentação de Pessoas: ${act.peopleAction}` : '',
+      act.peopleName ? `Nome do Colaborador: ${act.peopleName}` : '',
+      act.peopleRole ? `Cargo: ${act.peopleRole}` : '',
+      act.peopleCost ? `Custo Movimentação: ${formatCurrency(act.peopleCost)}` : '',
+      act.evidence ? `Evidência: ${act.evidence}` : ''
+    ];
+
+    const peopleList = formatPeopleList(act.peopleList);
+    if (peopleList) {
+      lines.push('', 'Lista de Pessoas:', peopleList);
+    }
+
+    return lines.filter(Boolean).join('\n');
+  }
+
+  function buildExecutiveSummaryMarkdown(act) {
+    const lines = [
+      `# Resumo Executivo - Ação ${act.id}`,
+      '',
+      `**O que:** ${act.what || 'N/A'}`,
+      `**Por que:** ${act.why || 'N/A'}`,
+      `**Onde:** ${act.where || 'N/A'}`,
+      `**Quando:** ${formatDateString(act.when)}`,
+      `**Quem:** ${act.who || 'N/A'}`,
+      `**Como:** ${act.how || 'N/A'}`,
+      `**Quanto:** ${formatCurrency(act.howMuch)}`,
+      `**Status:** ${act.status || 'N/A'}`,
+      act.statusReason ? `**Motivo:** ${act.statusReason}` : '',
+      `**Impacto no Caixa:** ${act.hasCashImpact === 'Sim' ? 'Sim' : 'Não'}`,
+      act.hasCashImpact === 'Sim' ? `**Valor do Impacto:** ${formatCurrency(act.cashImpactValue)}` : '',
+      act.peopleAction ? `**Movimentação de Pessoas:** ${act.peopleAction}` : '',
+      act.peopleName ? `**Nome do Colaborador:** ${act.peopleName}` : '',
+      act.peopleRole ? `**Cargo:** ${act.peopleRole}` : '',
+      act.peopleCost ? `**Custo Movimentação:** ${formatCurrency(act.peopleCost)}` : '',
+      act.evidence ? `**Evidência:** ${act.evidence}` : ''
+    ];
+
+    const peopleList = formatPeopleList(act.peopleList);
+    if (peopleList) {
+      lines.push('', '**Lista de Pessoas:**', peopleList);
+    }
+
+    return lines.filter(Boolean).join('\n');
+  }
+
+  function formatPeopleList(peopleList) {
+    if (!peopleList) return '';
+    try {
+      const list = JSON.parse(peopleList);
+      if (Array.isArray(list) && list.length > 0) {
+        return list.map(person => {
+          const name = person.name || person.Nome || '';
+          const role = person.role || person.Cargo || '';
+          const area = person.area || person.Area || '';
+          return `- ${name}${role ? ` | ${role}` : ''}${area ? ` | ${area}` : ''}`;
+        }).join('\n');
+      }
+    } catch (error) {
+      return peopleList;
+    }
+    return '';
+  }
+
+  function formatCurrency(value) {
+    if (value === undefined || value === null || value === '') return 'N/A';
+    const numberValue = Number(value);
+    if (Number.isNaN(numberValue)) return 'N/A';
+    return numberValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  }
+
+  function formatDateString(dateValue) {
+    if (!dateValue) return 'N/A';
+    const dateParts = String(dateValue).split('-');
+    return dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : String(dateValue);
+  }
+
+  function showExecutiveSummary(actId) {
+    const act = actions.find(item => item.id === actId);
+    if (!act) {
+      showToast('Ação não encontrada para gerar o resumo executivo.', 'error');
+      return;
+    }
+
+    modalSummary.dataset.currentActionId = act.id;
+    const summaryHtml = buildExecutiveSummaryHtml(act);
+    document.getElementById('summary-content-card').innerHTML = summaryHtml;
+    modalSummary.classList.add('active');
+  }
+
+  window.showExecutiveSummary = showExecutiveSummary;
+
+  function buildExecutiveSummaryHtml(act) {
+    const formattedCost = formatCurrency(act.howMuch);
+    const formattedImpactValue = formatCurrency(act.cashImpactValue);
+    const evidenceLink = act.evidence ? `<div style="margin-top: 10px;"><strong>Evidência:</strong> <a href="${escapeHtml(act.evidence)}" target="_blank" rel="noreferrer">${escapeHtml(act.evidence)}</a></div>` : '';
+    const statusReason = act.statusReason ? `<div style="margin-top: 10px;"><strong>Motivo:</strong> ${escapeHtml(act.statusReason)}</div>` : '';
+    const peopleSection = act.peopleAction ? `<div style="margin-top: 10px;"><strong>Movimentação de Pessoas:</strong> ${escapeHtml(act.peopleAction)}<br>${act.peopleName ? `<strong>Nome:</strong> ${escapeHtml(act.peopleName)}<br>` : ''}${act.peopleRole ? `<strong>Cargo:</strong> ${escapeHtml(act.peopleRole)}<br>` : ''}${act.peopleCost ? `<strong>Custo:</strong> ${escapeHtml(formatCurrency(act.peopleCost))}` : ''}</div>` : '';
+    const peopleList = formatPeopleList(act.peopleList);
+    const peopleListHtml = peopleList ? `<div style="margin-top: 10px; white-space: pre-wrap;"><strong>Lista de Pessoas:</strong><br>${escapeHtml(peopleList).replace(/\n/g, '<br>')}</div>` : '';
+
+    return `
+      <div style="display: grid; gap: 12px;">
+        <div><strong>O que:</strong> ${escapeHtml(act.what)}</div>
+        <div><strong>Por que:</strong> ${escapeHtml(act.why)}</div>
+        <div><strong>Onde:</strong> ${escapeHtml(act.where)}</div>
+        <div><strong>Quando:</strong> ${escapeHtml(formatDateString(act.when))}</div>
+        <div><strong>Quem:</strong> ${escapeHtml(act.who)}</div>
+        <div><strong>Como:</strong> ${escapeHtml(act.how)}</div>
+        <div><strong>Quanto:</strong> ${escapeHtml(formattedCost)}</div>
+        <div><strong>Status:</strong> ${escapeHtml(act.status)}</div>
+        ${statusReason}
+        <div style="margin-top: 10px;"><strong>Impacto no Caixa:</strong> ${escapeHtml(act.hasCashImpact === 'Sim' ? `Sim (${formattedImpactValue})` : 'Não')}</div>
+        ${peopleSection}
+        ${peopleListHtml}
+        ${evidenceLink}
+      </div>
+    `;
+  }
+
   function updateDashboard() {
     const total = actions.length;
     const completed = actions.filter(a => a.status === 'Concluído').length;
@@ -2493,6 +2683,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnEmployeeModalClose.addEventListener('click', closeEmployeeModal);
   btnEmployeeCancel.addEventListener('click', closeEmployeeModal);
+
+  // Fechar Modal Resumo Executivo [NEW]
+  if (btnSummaryModalClose) {
+    btnSummaryModalClose.addEventListener('click', () => {
+      modalSummary.classList.remove('active');
+    });
+  }
+  if (btnSummaryClose) {
+    btnSummaryClose.addEventListener('click', () => {
+      modalSummary.classList.remove('active');
+    });
+  }
+  if (btnSummaryDownload) {
+    btnSummaryDownload.addEventListener('click', downloadExecutiveSummaryPdf);
+  }
+  if (btnCopySummary) {
+    btnCopySummary.addEventListener('click', copyExecutiveSummaryMarkdown);
+  }
 
   function openEmployeeModal(empToEdit = null) {
     formEmployee.reset();

@@ -6,7 +6,7 @@
   <title>5W2H Action Monitor | Gestão Inteligente</title>
   
   <!-- CSS Principal -->
-  <link rel="stylesheet" href="style.css?v=3.4">
+  <link rel="stylesheet" href="style.css?v=3.5">
   <style>
     /* Forçar legibilidade do título e estatísticas ignorando cache antigo do style.css */
     .app-title h1 {
@@ -857,6 +857,36 @@
     </div>
   </div>
 
+  <!-- MODAL DE RESUMO EXECUTIVO [NEW] -->
+  <div id="modal-summary" class="modal-overlay">
+    <div class="modal-content" style="max-width: 650px;">
+      
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="file-text" style="color: var(--color-cyan);"></i> Resumo Executivo da Ação
+        </h2>
+        <button id="btn-summary-modal-close" class="btn-icon" title="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 24px;">
+        <div id="summary-content-card" style="max-width: 100%; background: rgba(255,255,255,0.01); margin-top: 0; padding: 20px; font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--text-main); border: 1px solid var(--border-normal); border-radius: var(--radius-sm);">
+          <!-- Gerado dinamicamente -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <button type="button" id="btn-copy-summary" class="btn" style="background: rgba(0, 242, 254, 0.1); color: var(--color-cyan); border: 1px solid rgba(0, 242, 254, 0.3); font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+          <i data-lucide="copy" style="width: 14px; height: 14px;"></i> Copiar Markdown
+        </button>
+        <button type="button" id="btn-summary-download" class="btn btn-primary" style="background: var(--color-cyan); border: 1px solid rgba(0, 242, 254, 0.5); color: #101010;">Baixar PDF</button>
+        <button type="button" id="btn-summary-close" class="btn" style="background: var(--bg-card); border: 1px solid var(--border-normal); color: var(--text-main);">Fechar</button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- NOTIFICAÇÃO TOAST -->
   <div id="toast" class="toast">
     <i id="toast-icon" data-lucide="info"></i>
@@ -874,7 +904,8 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- SCRIPTS DA APLICAÇÃO -->
-  <script src="google-drive-db.js?v=3.4"></script>
-  <script src="app.js?v=3.4"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="google-drive-db.js?v=3.5"></script>
+  <script src="app.js?v=3.5"></script>
 </body>
 </html>
