@@ -10,7 +10,7 @@
 // =========================================================================
 const CLIENT_ID = '947815600895-61vcmpsp59hp57vdsrfgk1spsndha9l3.apps.googleusercontent.com';
 const TARGET_FOLDER_ID = '18ri71QSAQQccc-ACHB7dAfs-e3UApQJ-';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+const SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
 // =========================================================================
 
 class GoogleDriveDB {
@@ -171,18 +171,13 @@ class GoogleDriveDB {
         
         console.error("Erro da API do Google Drive:", errorData);
 
-        if (response.status === 403) {
-          // Tipicamente bloqueado por políticas de segurança corporativa ou escopos restritos
-          throw new Error(
-            "BLOQUEIO_TI_WORKSPACE: O acesso a aplicativos de terceiros foi bloqueado pelo administrador de TI da sua empresa. " +
-            "Seu Workspace corporativo restringe o uso destas APIs por segurança. " +
-            `Detalhes: ${errorMessage}`
-          );
+        if (response.status === 403 || response.status === 401) {
+          throw new Error("Acesso Negado: Sua conta não possui permissão de acesso à pasta de dados centralizada do projeto. Solicite acesso ao administrador.");
         } else if (response.status === 404) {
-          throw new Error(`Pasta pai (ID: ${folderId}) não encontrada no Google Drive. Verifique se o ID está correto.`);
+          throw new Error("Acesso Negado: Sua conta não possui permissão de acesso à pasta de dados centralizada do projeto. Solicite acesso ao administrador.");
         }
         
-        throw new Error(`Erro na conexão com o Google Drive (${response.status}): ${errorMessage}`);
+        throw new Error(`Acesso Negado: Sua conta não possui permissão de acesso à pasta de dados centralizada do projeto. Solicite acesso ao administrador. (Erro: ${response.status} - ${errorMessage})`);
       }
 
       const searchResult = await response.json();
@@ -196,9 +191,8 @@ class GoogleDriveDB {
         await this.ensureHeadcountSheetExists();
         await this.initializeHeaders(); // Garante cabeçalhos atualizados
       } else {
-        // Planilha não encontrada! Vamos criá-la dentro da pasta corporativa correspondente
-        console.log("Planilha não encontrada. Criando nova planilha na pasta do projeto...");
-        await this.createSpreadsheet(folderId);
+        // Planilha não encontrada! Não criamos planilha na raiz nem em outro lugar. Acesso negado.
+        throw new Error("Acesso Negado: Sua conta não possui permissão de acesso à pasta de dados centralizada do projeto. Solicite acesso ao administrador.");
       }
       
       return this.spreadsheetId;
