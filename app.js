@@ -190,6 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSummaryDownload = document.getElementById('btn-summary-download');
   const btnCopySummary = document.getElementById('btn-copy-summary');
 
+  // Chave pública/usuário para testar integração com Gemini (substitua pela sua)
+  const GEMINI_API_KEY = "AIzaSyAEYg-MhJcd2U7G7jbg5zm93cDj5U0URbI"; // fornecida pelo usuário
+
   // Detalhes extras de transição PJ e custo de demissão [NEW]
   const pjDetailsContainer = document.getElementById('pj-details-container');
   const pjCurrentSalary = document.getElementById('pj-current-salary');
@@ -1599,12 +1602,94 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Se houver um resumo gerado pela IA disponível, copie-o primeiro
+    if (window.currentGeneratedSummaryText) {
+      navigator.clipboard.writeText(window.currentGeneratedSummaryText).then(() => {
+        showToast('Resumo executivo (gerado por IA) copiado para a área de transferência.', 'success');
+      }).catch(() => {
+        showToast('Não foi possível copiar o resumo gerado. Tente novamente.', 'error');
+      });
+      return;
+    }
+
     const markdownText = buildExecutiveSummaryMarkdown(act);
     navigator.clipboard.writeText(markdownText).then(() => {
       showToast('Resumo executivo copiado para a área de transferência.', 'success');
     }).catch(() => {
       showToast('Não foi possível copiar o resumo. Tente novamente.', 'error');
     });
+  }
+
+  /**
+   * Função para gerar o Resumo Executivo Profissional utilizando a API Gemini
+   * @param {Object} acaoData
+   */
+  async function gerarResumoExecutivoProfissional(acaoData) {
+    const summaryCard = document.getElementById('summary-content-card');
+    if (!summaryCard) return;
+
+    // Estado de carregamento elegante
+    summaryCard.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px; color: var(--color-cyan);">
+          <div class="spinner" style="border: 3px solid rgba(0,242,254,0.1); border-top: 3px solid var(--color-cyan); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;"></div>
+          <span>Inteligência Artificial construindo relatório executivo de alto nível...</span>
+      </div>
+      <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+    `;
+
+    const prompt = `
+    Você é um Diretor Executivo (C-Level) e especialista em comunicação corporativa. 
+    Transforme os dados brutos de formulário da seguinte ação 5W2H em um relatório de Resumo Executivo fluido, elegante e extremamente profissional para apresentação à diretoria e CEO.
+    
+    Regras Críticas:
+    1. Proibido usar formato de lista seca ou repetir perguntas diretas como "O que:", "Por que:", "Quem:".
+    2. Organize o texto em três seções corporativas formais usando títulos em Markdown (## ou ###): '1. Alinhamento Estratégico e Objetivo', '2. Governança e Cronograma Executivo' e '3. Análise de Impacto Financeiro e Status'.
+    3. Mantenha todos os dados originais intactos (nomes, datas, ID, valores).
+    4. Articule os tópicos como parágrafos narrativos contínuos de alto nível.
+    
+    Dados Brutos da Ação:
+    - ID do Projeto: ${acaoData.id || 'Não informado'}
+    - O Que fazer (What): ${acaoData.what || 'Não informado'}
+    - Por Que fazer (Why): ${acaoData.why || 'Não informado'}
+    - Quem fará (Who): ${acaoData.who || 'Não informado'}
+    - Onde será feito (Where): ${acaoData.where || 'Não informado'}
+    - Quando (When): ${acaoData.when || 'Não informado'}
+    - Quanto custa (How Much): R$ ${acaoData.howMuch || '0'}
+    - Status Atual: ${acaoData.status || 'Não iniciado'}
+    - Impacto no Caixa: ${acaoData.hasCashImpact || 'Não'}
+    `;
+
+    try {
+      // Chamada direta para o endpoint oficial do Gemini 2.5 Flash (Plano Gratuito)
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        })
+      });
+
+      if (!response.ok) throw new Error('Falha na comunicação com a API do Gemini');
+
+      const data = await response.json();
+      const textoGerado = data.candidates[0].content.parts[0].text;
+
+      // Renderiza o Markdown retornado formatado na tela
+      summaryCard.innerHTML = `<div style="white-space: pre-wrap; text-align: left;">${textoGerado}</div>`;
+
+      // Armazena para uso posterior (download / copiar)
+      window.currentGeneratedSummaryText = textoGerado;
+
+    } catch (error) {
+      console.error('Erro ao construir resumo:', error);
+      summaryCard.innerHTML = `<p style="color: var(--status-delayed);">Ocorreu um erro ao gerar o resumo inteligente. Verifique sua conexão ou a chave de API.</p>`;
+    }
   }
 
   function buildExecutiveSummaryText(act) {
@@ -1706,9 +1791,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     modalSummary.dataset.currentActionId = act.id;
+    // Renderiza o resumo básico gerado localmente e abre o modal
     const summaryHtml = buildExecutiveSummaryHtml(act);
     document.getElementById('summary-content-card').innerHTML = summaryHtml;
     modalSummary.classList.add('active');
+
+    // Aciona a geração avançada por Gemini (se a chave estiver preenchida)
+    try {
+      // chama de forma assíncrona sem bloquear a abertura do modal
+      gerarResumoExecutivoProfissional(act);
+    } catch (err) {
+      console.warn('Falha ao iniciar geração por Gemini:', err);
+    }
   }
 
   window.showExecutiveSummary = showExecutiveSummary;
