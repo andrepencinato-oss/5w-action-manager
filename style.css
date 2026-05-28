@@ -1247,5 +1247,29 @@ textarea.input-control {
   background: rgba(0, 0, 0, 0.02);
 }
 
+/* =========================================================================
+   CORREÇÕES DE CORTE VISUAL E CONTRASTE NOS SELECTS DE SUB-AÇÕES
+   ========================================================================= */
+.sub-action-item-card select.input-control {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  color: var(--text-main) !important;
+  background-color: var(--bg-input) !important;
+  cursor: pointer;
+}
+
+/* Contraste dos options nos temas escuro e claro */
+.sub-action-item-card select.input-control option {
+  background-color: #11192c !important; /* Fundo escuro fixo para contraste no dark mode */
+  color: #f3f4f6 !important;
+}
+
+[data-theme="light"] .sub-action-item-card select.input-control option {
+  background-color: #ffffff !important; /* Fundo claro no light mode */
+  color: #1f2937 !important;
+}
+
 
 
