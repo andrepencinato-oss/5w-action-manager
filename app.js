@@ -1637,6 +1637,22 @@ document.addEventListener('DOMContentLoaded', () => {
       <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
     `;
 
+    // Mapeamento dinâmico de sub-ações
+    let subActionsText = "Nenhuma sub-ação detalhada cadastrada.";
+    if (acaoData.subActionsList) {
+      try {
+        const subActions = JSON.parse(acaoData.subActionsList);
+        if (Array.isArray(subActions) && subActions.length > 0) {
+          subActionsText = subActions.map((sub, i) => {
+            const costInfo = sub.cashImpact === 'Sim' ? ` | Impacto no Caixa: R$ ${sub.cashValue || '0'}` : '';
+            return `- Sub-Ação ${i + 1}: ${sub.what || 'Sem descrição'} (Responsável: ${sub.who || 'N/A'} | Prazo: ${sub.endDate || 'N/A'} | Status: ${sub.status || 'Não Iniciado'}${costInfo})`;
+          }).join('\n');
+        }
+      } catch (e) {
+        console.error("Erro ao processar a lista de sub-ações para o prompt:", e);
+      }
+    }
+
     const prompt = `
     Você é um especialista em Gestão de Projetos (PMO) e Diretor Executivo (C-Level).
     Analise os dados brutos da seguinte ação 5W2H e crie um "Status Report Executivo" profissional no formato de Project Charter/PMO.
@@ -1662,7 +1678,8 @@ document.addEventListener('DOMContentLoaded', () => {
     | **Impacto Direto no Caixa** | [Indique se sim ou não, baseado em: ${acaoData.hasCashImpact || 'Não'}. Se sim, mencione o valor de R$ ${acaoData.cashImpactValue || '0'}] |
     | **Transição de Pessoas (Headcount)** | [Indique se sim ou não, e o tipo de movimentação se houver, baseando-se no projeto de Pessoas: ${acaoData.project === 'Pessoas' ? 'Sim' : 'Não'}] |
 
-    - **Plano de Execução (How)**: [Passo a passo ou método da entrega de forma refinada, baseado em: ${acaoData.how || 'Não informado'}]
+    - **Plano de Execução (How)**: [Como será feito, baseado na descrição principal: "${acaoData.how || 'Não informado'}". Analise a lista de sub-ações abaixo e estruture-as de forma refinada como um checklist ou cronograma real de entregas das sub-ações, indicando os prazos e responsáveis, e destacando visualmente quais subtarefas já foram iniciadas, concluídas ou estão pendentes:
+    ${subActionsText}]
     ---
 
     Instruções adicionais:
